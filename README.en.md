@@ -61,6 +61,7 @@ If you have a new gameplay idea, you're very welcome to fork the game and publis
 | Mod | Author | About |
 |---|---|---|
 | [IP, PLEASE: Modder's Cut](https://erasercn.github.io/ip-please/)<br>[Source](https://github.com/EraserCN/ip-please) · [Apps](https://github.com/EraserCN/ip-please/releases) | [EraserCN](https://github.com/EraserCN) | Stretches the game to 12 days, with a wallbreaker storyline and multiple endings. Days 8–11 each bring a new rule and their own characters (fingerprint browsers, prompt injection, knockoff student IDs…). Android, iOS and macOS apps |
+| [IP, PLEASE: File Zero](https://ip-please-zero.azurpilot.com/)<br>[Source](https://github.com/wess09/ip-please-zero) | Ming ([wess09](https://github.com/wess09)) | A 14-day story: investigate File No. 0000 and weigh evidence, rules and choices across 30 endings. Nine AI travelers (GPT, Qwen, Grok, Kimi, Gemini, Fishy…), plus an endless mode |
 
 ## Files
 

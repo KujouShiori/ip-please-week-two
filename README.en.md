@@ -60,7 +60,7 @@ If you have a new gameplay idea, you're very welcome to fork the game and publis
 
 | Mod | Author | About |
 |---|---|---|
-| *None yet. Yours could be the first.* | | |
+| [IP, PLEASE: Modder's Cut](https://erasercn.github.io/ip-please/)<br>[Source](https://github.com/EraserCN/ip-please) · [Apps](https://github.com/EraserCN/ip-please/releases) | [EraserCN](https://github.com/EraserCN) | Stretches the game to 12 days, with a wallbreaker storyline and multiple endings. Days 8–11 each bring a new rule and their own characters (fingerprint browsers, prompt injection, knockoff student IDs…). Android, iOS and macOS apps |
 
 ## Files
 

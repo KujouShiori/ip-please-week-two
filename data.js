@@ -973,11 +973,23 @@ function buildQueue(day) {
 // 不查 DAY_SCRIPT：种类来自已解锁条文，队伍逐日变长并封顶，桥段按固定节奏插入。
 // 三分之二的旅客撞在「今日重点查」那两条上，剩下的从全部已解锁种类里抽，保证老条文不会消失。
 function endlessQueue(n) {
-  const kinds = endlessKinds();
-  const focus = endlessFocus().flatMap((k) => RULE_KINDS[k] || []);
+  const kinds = [...new Set(endlessKinds())];
+  const focus = [...new Set(endlessFocus().flatMap((k) => RULE_KINDS[k] || []))];
   const size = Math.min(12, 5 + Math.floor(n / 2));
-  const q = [];
-  for (let i = 0; i < size; i++) q.push(randomEntrant(Math.max(2, n), pick(focus.length && i % 3 !== 2 ? focus : kinds)));
+  // 先把当天全部可选种类轮流发一遍，再把隔位换成「今日重点」。
+  // 之前是从 focus 里反复 pick，而 focus 只有两条规则、映射出来可能只有一两种毛病，
+  // 结果第 1、2 班整队人都是同一个问题，看着像复制粘贴。
+  const bag = [];
+  while (bag.length < size) bag.push(...shuffle(kinds.slice()));
+  const plan = bag.slice(0, size);
+  for (let i = 0; i < plan.length && focus.length; i += 2) plan[i] = focus[Math.floor(i / 2) % focus.length];
+  // 每隔四个留一个完全合规的旅客，比例照主线（每天 8 人里两个 valid）。
+  // 没有这一条，无尽里人人都带毛病，一律拒绝就能满分，审查就退化成盖章。
+  for (let i = 3; i < plan.length; i += 4) plan[i] = 'valid';
+  // 第 1 班交给主线 Day 1 的生成器：那时只有 §1 一条条文，种类池就一种，
+  // 走 randomDay1 才有「我是来充值的」「同事说这个好用」这些不同的说法。
+  const day = (n) => (n === 1 ? 1 : Math.max(2, n));
+  const q = plan.map((kind) => randomEntrant(day(n), kind));
   if (n >= 3 && n % 4 === 3) q.splice(2, 0, { type: 'rush' });
   if (n >= 5 && n % 4 === 1) q.splice(3, 0, { type: 'clones' });
   return q;

@@ -32,12 +32,13 @@
 - 手机横屏用手指、电脑用鼠标拖证件
 - 纯静态网页，不加载任何外部资源；下载仓库后直接双击 `index.html` 也能玩
 
-## 英文版
+## 上线公告
 
 ```text
-英文版已严肃上线，游戏开局可选择语言。
-The English version is now seriously online. Choose your language at the start of the game.
-https://ip-please.github.io
+《IP, PLEASE》第二周已严肃上线：原版 6 天之后多了 3 天。
+你拒过的人换了一身伪装回来了，这次窗口边多了个档案柜。
+Week two is now seriously online: three more days after the original six. The people you denied are back with better papers, and there's a filing cabinet at your window.
+https://kujoushiori.github.io/ip-please-week-two
 @DarioAmodei @claudeai @AnthropicAI @dukope
 ```
 
@@ -73,12 +74,6 @@ https://ip-please.github.io
 | [IP, PLEASE：零号档案 · File Zero](https://ip-please-zero.azurpilot.com/)<br>[源码](https://github.com/wess09/ip-please-zero) | 茗（[wess09](https://github.com/wess09)） | 把作品身份和存储键集中到一个文件；结局表只管「是什么、怎么演」，判定留在剧情里；结局图鉴单独存储 |
 
 两个分支都是 MIT。完整 mod 列表由上游维护，见 [ip-please.github.io 的 README](https://github.com/ip-please/ip-please.github.io#mod)，这里不重复收录，免得同一批链接在两处各改一半。
-
-| Mod | 作者 | 简介 |
-|---|---|---|
-| [IP, PLEASE: Modder's Cut · 请出示你的 IP：加长版](https://erasercn.github.io/ip-please/)<br>[源码](https://github.com/EraserCN/ip-please) · [App 下载](https://github.com/EraserCN/ip-please/releases) | [EraserCN](https://github.com/EraserCN) | 延长到 12 天，加了破壁者剧情线和多重结局；第 8–11 天各有新规则和专属角色（指纹浏览器、提示词注入、淘宝学生证……）。有 Android、iOS、macOS 客户端 |
-| [IP, PLEASE：零号档案 · File Zero](https://ip-please-zero.azurpilot.com/)<br>[源码](https://github.com/wess09/ip-please-zero) | 茗（[wess09](https://github.com/wess09)） | 14 天剧情，调查第 0000 号申请，在证据、规则和选择之间走向 30 个结局；九位 AI 旅客（GPT、Qwen、Grok、Kimi、Gemini、大肥鱼……），另有无尽模式 |
-| [IP, PLEASE Mobile · Android 移植版](https://github.com/zhcalvin/ip-please-mobile)<br>[APK 下载](https://github.com/zhcalvin/ip-please-mobile/releases) | [zhcalvin](https://github.com/zhcalvin) | 原版 6 天剧情原样移植到 Android 8.0+，离线可玩，手机和平板横屏触摸，中英双语，切到后台自动暂停 |
 
 ## 目录
 

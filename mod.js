@@ -7,6 +7,8 @@ const MOD = Object.freeze({ id: 'ip-please-week-two', subtitle: '第二周', aut
 
 const STORAGE_KEYS = Object.freeze({
   save: `${MOD.id}-save-v1`,
+  endless: `${MOD.id}-endless-v1`,
+  endlessBest: `${MOD.id}-endless-best-v1`,
   endings: `${MOD.id}-endings-v1`,
   lang: `${MOD.id}-lang`,
 });

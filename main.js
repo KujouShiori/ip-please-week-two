@@ -144,8 +144,8 @@ function sceneClick(x, y) {
   if (scene === 'news' && st() > 0.6) { go('booth'); return; }
   if (scene === 'summary') { summaryClick(x, y); return; }
   if (scene === 'erased' && st() > 1) { go('end'); return; }
-  if (scene === 'end' && st() > 2.4 && hasNextWeek() && S.day === END_DAY && inBox(x, y, WEEK_BTN)) { S.day++; saveGame(); go('daycard'); return; }
-  if ((scene === 'end' || scene === 'over') && st() > 1.5 && inBox(x, y, RESTART_BTN)) { clearSave(); newGame(); go('daycard'); }
+  if (scene === 'end' && st() > 2.4 && hasNextWeek() && S.day === END_DAY && S.mode !== 'endless' && inBox(x, y, WEEK_BTN)) { S.day++; saveGame(); go('daycard'); return; }
+  if ((scene === 'end' || scene === 'over') && st() > 1.5 && inBox(x, y, RESTART_BTN)) { clearSave(); newGame(S.mode); go('daycard'); }
 }
 
 // ———————————————————— 主循环 ————————————————————

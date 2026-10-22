@@ -250,9 +250,6 @@ const RULES = [
   { day: 8, key: 'record', head: '§8 记录须本站出', subs: ['代办点打印的没有圆印：作废', '记录说没矛盾、证件上却有：按证件办'] },
 ];
 
-// 当天是否有新条文（宪法上标 NEW、检查亭提示玩家去翻，都由它决定）
-const hasNewRule = (day) => RULES.some((r) => r.day === day);
-
 // 单页可用高度。按 6 天现有条文，刚好排成「§1–§3」一页、「§4–§6＋§12」一页；条文再多会自动添页。
 const RULE_PAGE_MAX = 160;
 
@@ -262,10 +259,12 @@ class Rulebook {
     this.w = 200;
     this.icon = ['book', C.BOOK];
     const lineH = (row) => (row.size === 10 ? 14 : 10);
+    // 生效条文和「今天新解锁」的都问 data.js：主线按 day，无尽按排班次序，这里不再自己判断天数。
     // 一条规则连同它的说明行是一块，一块放不进当前页就整块挪到下一页，不做跨页截断。
     // §12 是最后一块，于是永远落在末页。
-    const blocks = RULES.filter((r) => r.day <= day).map((r) => [
-      { s: T(r.head), size: 10, col: r.day === day ? K.RED_D : K.TEXT, key: r.key, isNew: r.day === day },
+    const on = unlockedRuleKeys(), fresh = rulesNewOn(day).map((r) => r.key);
+    const blocks = RULES.filter((r) => on.includes(r.key)).map((r) => [
+      { s: T(r.head), size: 10, col: fresh.includes(r.key) ? K.RED_D : K.TEXT, key: r.key, isNew: fresh.includes(r.key) },
       ...r.subs.map((s) => ({ s: s.includes('|') ? s : T(s), size: 8, col: K.TEXT_L, key: r.key })),
     ]);
     blocks.push([{ s: T('§12 只看地区，不看脸'), size: 8, col: K.TEXT_L, key: null }]);

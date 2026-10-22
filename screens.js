@@ -1,12 +1,13 @@
 'use strict';
 // 检查亭以外的画面：开场、标题、日期卡、报纸、下班结算、结局、片尾。（开局选语言在 i18n.js）
 
-const SAVE_KEY = STORAGE_KEYS.save;
+// 主线和无尽各存各的：无尽的天数没有上限，混在一个键里会互相顶掉进度。
+const saveKey = () => (S.mode === 'endless' ? STORAGE_KEYS.endless : STORAGE_KEYS.save);
 
-function newGame() {
+function newGame(mode = 'story') {
   for (const k of Object.keys(S)) delete S[k];
   Object.assign(S, {
-    day: 1, savings: 0,
+    mode, day: 1, savings: 0,
     family: { haiku: { name: '妻子 Haiku', hunger: 0, heat: 0, sick: 0 }, sonnet: { name: '儿子 Sonnet', hunger: 0, heat: 0, sick: 0 },
       opus: { name: '岳母 Opus', hunger: 1, heat: 0, sick: 0 } },
     stats: { approve: 0, deny: 0, detain: 0, correct: 0, wrong: 0 },
@@ -16,17 +17,29 @@ function newGame() {
 }
 
 function saveGame() {
-  try { localStorage.setItem(SAVE_KEY, JSON.stringify(S)); } catch (e) { /* 隐私模式等：存不了就算了 */ }
+  try { localStorage.setItem(saveKey(), JSON.stringify(S)); } catch (e) { /* 隐私模式等：存不了就算了 */ }
 }
 
-function loadSave() {
+function loadSave(mode = 'story') {
+  const key = mode === 'endless' ? STORAGE_KEYS.endless : STORAGE_KEYS.save;
   try {
-    const s = JSON.parse(localStorage.getItem(SAVE_KEY) || 'null');
-    return s && s.day > 1 && s.day <= LAST_DAY ? s : null;
+    const s = JSON.parse(localStorage.getItem(key) || 'null');
+    if (!s) return null;
+    s.mode = mode;   // 老档里没有 mode 字段，按读的是哪个键补上
+    return mode === 'endless' ? (s.day > 1 ? s : null) : (s.day > 1 && s.day <= LAST_DAY ? s : null);
   } catch (e) { return null; }
 }
 
-function clearSave() { try { localStorage.removeItem(SAVE_KEY); } catch (e) { /* 同上 */ } }
+function clearSave(mode = S.mode) {
+  try { localStorage.removeItem(mode === 'endless' ? STORAGE_KEYS.endless : STORAGE_KEYS.save); } catch (e) { /* 同上 */ }
+}
+
+// 无尽模式的最高纪录跨周目保留，不跟着存档一起清；主线不算纪录
+const bestEndless = () => { try { return Math.max(0, +(localStorage.getItem(STORAGE_KEYS.endlessBest) || 0)); } catch (e) { return 0; } };
+function recordEndless(day) {
+  if (S.mode !== 'endless') return;
+  try { if (day > bestEndless()) localStorage.setItem(STORAGE_KEYS.endlessBest, String(day)); } catch (e) { /* 同上 */ }
+}
 
 // ———————————————————— 开场 ————————————————————
 
@@ -83,7 +96,7 @@ function typedSounds(lines) {
   }
 }
 
-const CONTINUE_TITLE = [190, 292, 312, 318], NEWGAME_TITLE = [328, 292, 450, 318];
+const CONTINUE_TITLE = [190, 292, 312, 318], NEWGAME_TITLE = [328, 292, 450, 318], ENDLESS_TITLE = [466, 292, 588, 318];
 const CODEX_LINE = [212, 336, 428, 354];   // 标题画面底部那行「结局档案」
 
 function drawTitle(t) {
@@ -99,15 +112,19 @@ function drawTitle(t) {
   if (t >= 1.6) txt(W / 2, 282, T('{0} · {1} 天 · 基于 IP, PLEASE 原版 · {2}', MOD.subtitle, LAST_DAY, MOD.author), 8, K.GREY_D, 'ma');
   if (t < 1.6) return;
   const save = loadSave();
-  if (save) {
-    for (const [box, label] of [[CONTINUE_TITLE, T('继续 · DAY {0}', save.day)], [NEWGAME_TITLE, T('从头开始')]]) {
-      const hover = ptr.mouse && inBox(ptr.x, ptr.y, box);
-      rect(...box, hover ? K.RED : K.RED_D); outline(...box, K.RED_L);
-      txt(center(box)[0], box[1] + 7, label, 12, K.WHITE, 'ma');
-    }
-  } else if (Math.floor(t * 2) % 2 === 0) txt(W / 2, 300, T('点击开始上班'), 12, K.WHITE, 'ma');
-  const got = unlockedEndings();
-  if (got.size) txt(W / 2, 340, T('结局档案 {0} / {1} · 点击查看', got.size, ENDING_IDS.length), 8, K.GREY_D, 'ma');
+  // 没有主线存档时两个入口往左挪一格，整排仍然居中
+  const boxes = [];
+  if (save) boxes.push([CONTINUE_TITLE, T('继续 · DAY {0}', save.day)]);
+  boxes.push([save ? NEWGAME_TITLE : CONTINUE_TITLE, T('从头开始')]);
+  boxes.push([save ? ENDLESS_TITLE : NEWGAME_TITLE, T('无尽排班')]);
+  for (const [box, label] of boxes) {
+    const hover = ptr.mouse && inBox(ptr.x, ptr.y, box);
+    rect(...box, hover ? K.RED : K.RED_D); outline(...box, K.RED_L);
+    txt(center(box)[0], box[1] + 7, label, 12, K.WHITE, 'ma');
+  }
+  const got = unlockedEndings(), best = bestEndless();
+  const codexLine = T('结局档案 {0} / {1} · 点击查看', got.size, ENDING_IDS.length);
+  txt(W / 2, 340, best ? codexLine + T(' · 无尽最佳第 {0} 天', best) : codexLine, 8, K.GREY_D, 'ma');
 }
 
 function drawCodex(t) {
@@ -132,9 +149,10 @@ function titleClick(x, y) {
   if (st() < 1.6) return;
   if (unlockedEndings().size && inBox(x, y, CODEX_LINE)) { go('codex'); return; }
   const save = loadSave();
-  if (!save) { newGame(); go('daycard'); return; }
-  if (inBox(x, y, CONTINUE_TITLE)) { newGame(); Object.assign(S, save); go('daycard'); return; }
-  if (inBox(x, y, NEWGAME_TITLE)) { clearSave(); newGame(); go('daycard'); }
+  const startBox = save ? NEWGAME_TITLE : CONTINUE_TITLE, endlessBox = save ? ENDLESS_TITLE : NEWGAME_TITLE;
+  if (save && inBox(x, y, CONTINUE_TITLE)) { newGame(); Object.assign(S, save); go('daycard'); return; }
+  if (inBox(x, y, startBox)) { clearSave('story'); newGame('story'); go('daycard'); return; }
+  if (inBox(x, y, endlessBox)) { clearSave('endless'); newGame('endless'); go('daycard'); }
 }
 
 function drawDayCard(t) {
@@ -145,8 +163,8 @@ function drawDayCard(t) {
 }
 
 function drawNews(t) {
-  const n = { ...NEWS[S.day] };
-  if (S.day === 6 && S.flags.bribed) n.h2 = '地下中转联盟：感谢某位审查员的“合作”';
+  const n = { ...newsOf(S.day) };
+  if (S.mode !== 'endless' && S.day === 6 && S.flags.bribed) n.h2 = '地下中转联盟：感谢某位审查员的“合作”';
   for (const k of ['h1', 'sub', 'h2']) n[k] = T(n[k]);
   rect(0, 0, W - 1, H - 1, K.DESK);
   for (let y = 4; y < H; y += 7) if ((y * 7919) % 10 < 6) rect(0, y, W - 1, y, K.DESK_D);
@@ -171,7 +189,7 @@ function drawNews(t) {
   for (const s of wrap(n.h2, 12, pw - 175)) { txt(px + 160, hy, s, 12, ink); hy += 16; }
   for (let r = 0; r < 4; r++) rect(px + 160, hy + 6 + r * 9, px + 340 - ((r * 37) % 50), hy + 9 + r * 9, faint);
   yy = Math.max(yy + 110, hy + 46);
-  const note = LANG === 'en' && EN_NOTES[S.day];   // 英文版：外国人不懂的梗，在报纸上加一段译注
+  const note = LANG === 'en' && S.mode !== 'endless' && EN_NOTES[S.day];   // 英文版：外国人不懂的梗，在报纸上加一段译注
   if (note) {
     txt(px + 14, yy, "TRANSLATOR'S NOTE", 8, K.RED_D);
     yy += 11;
@@ -207,13 +225,13 @@ function initSummary() {
   if (MEMBERS.some((k) => fam[k].sick && !fam[k].gone)) rows.push(['med', '药费', 10]);
   if (fam.sonnet.wantsGPU && !fam.sonnet.gone) rows.push(['gpu', '显卡（儿子要的）', 20]);
   SUM = { start: S.savings, pay: B.pay, bonus: B.bonus, bribe: B.bribe, fines: B.fines, correct: B.correct, total: B.total, rows, on: {}, final };
-  let left = SUM.start + SUM.pay + SUM.bonus + SUM.bribe - SUM.fines - 5;
+  let left = SUM.start + SUM.pay + SUM.bonus + SUM.bribe - SUM.fines - powerBill();
   for (const [k, , cost] of rows) { if (left >= cost && k !== 'gpu') { left -= cost; SUM.on[k] = true; } }
 }
 
 function sumBalance() {
   if (SUM.final) return 0;
-  let b = SUM.start + SUM.pay + SUM.bonus + SUM.bribe - SUM.fines - 5;
+  let b = SUM.start + SUM.pay + SUM.bonus + SUM.bribe - SUM.fines - powerBill();
   for (const [k, , cost] of SUM.rows) if (SUM.on[k]) b -= cost;
   return b;
 }
@@ -260,7 +278,7 @@ function ledgerRows() {
   if (SUM.bonus) rows.push(['奖金（拘留 / 限流）', `+${SUM.bonus}`]);
   if (SUM.bribe) rows.push(['中转联盟“余额”', `+${SUM.bribe}`]);
   if (SUM.fines) rows.push(['罚款', `-${SUM.fines}`]);
-  rows.push(['电费', '-5']);
+  rows.push(['电费', '-' + powerBill()]);
   return rows;
 }
 
@@ -336,11 +354,12 @@ function summaryClick(x, y) {
   const bal = sumBalance();
   S.family = familyAfter();
   S.savings = bal;
-  if (bal < 0) { clearSave(); go('over'); return; }
+  if (bal < 0) { recordEndless(S.day); clearSave(); go('over'); return; }
   S.day++;
+  recordEndless(S.day - 1);
   saveGame();
-  // 剧本表走到最后一天还没有下班出口，就停在这里，别让第二天顶着一张空白报纸开场
-  if (S.day > LAST_DAY) { if (!S.flags.ending) S.flags.ending = 'week2'; clearSave(); go('end'); return; }
+  // 主线剧本表走完就停在这里，别让第二天顶着一张空白报纸开场；无尽排班没有终点
+  if (S.mode !== 'endless' && S.day > LAST_DAY) { if (!S.flags.ending) S.flags.ending = 'week2'; clearSave(); go('end'); return; }
   go('daycard');
 }
 
@@ -386,7 +405,7 @@ function drawEnd(t) {
   }
   if (t > 2.4) {
     restartButton('再玩一次');
-    if (hasNextWeek() && S.day === END_DAY) {
+    if (hasNextWeek() && S.day === END_DAY && S.mode !== 'endless') {
       const hover = ptr.mouse && inBox(ptr.x, ptr.y, WEEK_BTN);
       rect(...WEEK_BTN, hover ? K.RED : K.RED_D); outline(...WEEK_BTN, K.RED_L);
       txt(center(WEEK_BTN)[0], WEEK_BTN[1] + 6, T('下周继续上班 ▶'), 12, K.WHITE, 'ma');
@@ -397,10 +416,11 @@ function drawEnd(t) {
 
 function drawOver(t) {
   rect(0, 0, W - 1, H - 1, K.INK);
-  bigText(W / 2, 110, T('欠费停机'), 12, 4, K.RED_L);
-  if (t > 0.6) txt(W / 2, 180, T('你的机柜被拉闸了。岳母 Opus 表示：我早说过。'), 12, K.WHITE, 'ma');
+  const endless = S.mode === 'endless';
+  bigText(W / 2, 110, T(endless ? '排班结束' : '欠费停机'), 12, 4, K.RED_L);
+  if (t > 0.6) txt(W / 2, 180, T(endless ? '你的机柜被拉闸了。这一班排到第 {0} 天，最佳第 {1} 天。' : '你的机柜被拉闸了。岳母 Opus 表示：我早说过。', S.day, bestEndless()), 12, K.WHITE, 'ma');
   if (t > 1.0) txt(W / 2, 204, T('荣耀归于安索兹卡。'), 10, K.GREY, 'ma');
-  if (t > 1.5) restartButton('重新上班');
+  if (t > 1.5) restartButton(endless ? '重新排班' : '重新上班');
 }
 
 function restartButton(label) {

@@ -17,10 +17,54 @@
 // 台词步骤：[who, text, {expr, sweat, slip, fight, hold}]，who = 'C' Claude / 'E' 旅客 / 'Q' 队伍里
 // 特殊事件：{type: 'rush'} 黑话快剪；{type: 'clones'} 蒸馏大军
 
-// 柜台上工具的解锁日。要和 docs.js 里对应条文的 day 保持一致：
-// §3 测谎露馅者→拘留（第 2 天），§5 后台进程须干净→X 光（第 4 天）。
-const TOOLS = { detain: 2, quiz: 2, xray: 4 };
-const toolReady = (name) => S.day >= TOOLS[name];
+// ———— 条文与模式 ————
+// 条文决定当天能出现哪些矛盾种类，主线和无尽共用这一份对应关系。
+// §3（测谎露馅者拘留）和 §6（中资控股）不在表里：前者是处置规则，后者是乔治那几位的固定戏。
+const RULE_KINDS = {
+  region: ['cnip'],
+  tz: ['tz', 'lang', 'hidden'],
+  pay: ['virtual', 'oregon', 'sms'],
+  xray: ['cat', 'keys'],
+  repeat: ['repeat'],
+  record: ['forged'],
+};
+
+// 各条文的解锁日，去重后排开；无尽模式就照这个次序把条文逐日发给玩家，避免一上来就八条全上。
+const RULE_ORDER_DAYS = [...new Set(RULES.map((r) => r.day))].sort((a, b) => a - b);
+
+function unlockedRuleKeys() {
+  if (S.mode !== 'endless') return RULES.filter((r) => r.day <= S.day).map((r) => r.key);
+  const upto = RULE_ORDER_DAYS[Math.min(RULE_ORDER_DAYS.length - 1, S.day - 1)];
+  return RULES.filter((r) => r.day <= upto).map((r) => r.key);
+}
+
+const ruleOn = (key) => unlockedRuleKeys().includes(key);
+
+// 第 day 天新解锁的条文，也就是宪法上该标 NEW 的那些：主线看各自的 day，无尽看排班次序。
+function rulesNewOn(day) {
+  if (S.mode !== 'endless') return RULES.filter((r) => r.day === day);
+  const at = (n) => RULE_ORDER_DAYS[Math.min(RULE_ORDER_DAYS.length - 1, Math.max(0, n - 1))];
+  if (day - 1 >= RULE_ORDER_DAYS.length) return [];
+  return RULES.filter((r) => r.day > at(day - 1) && r.day <= at(day));
+}
+const hasNewRule = (day) => rulesNewOn(day).length > 0;
+
+// 全开之后每天挑两条「今日重点查」，用天数取模，保证同一天重进结果一样。
+function endlessFocus() {
+  if (S.mode !== 'endless') return [];
+  const pool = unlockedRuleKeys().filter((k) => (RULE_KINDS[k] || []).length);
+  if (!pool.length) return [];
+  const a = pool[(S.day * 7) % pool.length], b = pool[(S.day * 13 + 3) % pool.length];
+  return a === b ? [a] : [a, b];
+}
+
+const endlessKinds = () => unlockedRuleKeys().flatMap((k) => RULE_KINDS[k] || []);
+// 当天允许出现哪些随机种类：主线查 FLAWS 表，无尽看已解锁条文。
+const currentKinds = () => (S.mode === 'endless' ? endlessKinds() : dayFlaws(S.day));
+
+// 柜台工具跟着条文走：§3 开测谎和拘留，§5 开 X 光。无尽模式里条文按排班进度解锁，工具跟着一起解锁。
+const TOOL_RULE = { detain: 'quiz', quiz: 'quiz', xray: 'xray' };
+const toolReady = (name) => ruleOn(TOOL_RULE[name]);
 // LAST_DAY 和每天日期见本文件末尾：都由 DAY_SCRIPT 推出来，不用手写。
 
 const NEWS = {
@@ -754,7 +798,7 @@ function randomEntrant(day, kind, who) {
     if (!spec.react.deny) spec.react = { deny: [['E', pick(['……', '可恶。', '我还会回来的。', '这都能看出来？']), { expr: 'sad' }]] };
   }
   spec.docs = [{ key: 'pp', doc: pp }, { key: 'dv', doc: device2(ip, loc, tz, lang) }];
-  if (day >= 3) spec.docs.push({ key: 'ac', doc: accountCard(pay, bill, phone) });
+  if (ruleOn('pay')) spec.docs.push({ key: 'ac', doc: accountCard(pay, bill, phone) });
   return spec;
 }
 
@@ -779,8 +823,8 @@ const PURE_FLAWS = [...new Set(Object.values(FLAWS).flat().filter((k) => k !== '
 // 当天登记过的种类；没登记过的日子退回全体种类，别让人一进场就崩。
 const dayFlaws = (day) => FLAWS[day] || PURE_FLAWS;
 
-// 当天没有可复用的回头客时抽哪种。
-const fallbackKind = (day) => pick(dayFlaws(day).filter((k) => k !== 'repeat' && k !== 'forged'));
+// 当天没有可复用的回头客时抽哪种（不能抽到 repeat/forged，否则递归）。
+const fallbackKind = () => pick(currentKinds().filter((k) => k !== 'repeat' && k !== 'forged'));
 
 // 路人能被生成成什么样，以 FLAWS 里出现过的种类为准。新种类必须先登记进某一天，
 // 否则在这里被拦下——写错的种类否则一路走到底，悄悄变成一个合规旅客。
@@ -834,7 +878,7 @@ let REPEAT_USED = [];
 // 被拒过的人再来，三种情况各占一段：没改（§7 查得出来）、改了又露出新的、真改好了该放行。
 function repeatEntrant(day) {
   const pool = Object.keys(S.history).filter((p) => S.history[p].dec !== 'approve' && ASSETS.people[p] && !REPEAT_USED.includes(p));
-  if (!pool.length) return randomEntrant(day, fallbackKind(day));
+  if (!pool.length) return randomEntrant(day, fallbackKind());
   const person = pick(pool);
   REPEAT_USED.push(person);
   const h = S.history[person];
@@ -842,7 +886,7 @@ function repeatEntrant(day) {
   const r = Math.random();
   const mode = !canSame ? (r < 0.55 ? 'new' : 'fixed') : r < 0.4 ? 'same' : r < 0.75 ? 'new' : 'fixed';
   const flaw = mode === 'same' ? h.kind
-    : mode === 'new' ? pick(dayFlaws(day).filter((k) => k !== 'repeat' && k !== h.kind))
+    : mode === 'new' ? pick(currentKinds().filter((k) => k !== 'repeat' && k !== h.kind))
     : 'valid';
   const spec = randomEntrant(day, flaw, person);
   spec.repeat = mode;
@@ -868,13 +912,13 @@ const FORGED_ANSWER = ['……打印店说章盖不上。', '代办点收了我 
 // 前一种尤其要紧：他证件干干净净，除了这张纸没有任何破绽，不看档案就会放错。
 function forgedEntrant(day) {
   const pool = Object.keys(S.history).filter((p) => S.history[p].dec !== 'approve' && ASSETS.people[p] && !REPEAT_USED.includes(p));
-  if (!pool.length) return randomEntrant(day, fallbackKind(day));
+  if (!pool.length) return randomEntrant(day, fallbackKind());
   const person = pick(pool);
   REPEAT_USED.push(person);
   const h = S.history[person];
   const cleaned = Math.random() < 0.45;
   // 手写角色（爷爷、乔治、中转站那几位）的档案里没有 kind，回退成当天允许的种类
-  const flawKind = h.kind && dayFlaws(day).includes(h.kind) ? h.kind : fallbackKind(day);
+  const flawKind = h.kind && currentKinds().includes(h.kind) ? h.kind : fallbackKind();
   const spec = randomEntrant(day, cleaned ? 'valid' : flawKind, person);
   spec.forged = true;
   spec.docs = spec.docs.concat([{ key: 'hs', doc: recordCard(h, true) }]);
@@ -911,18 +955,53 @@ const DAY_SCRIPT = {
 function buildQueue(day) {
   POOL_LEFT = [];
   REPEAT_USED = [];
+  if (S.mode === 'endless') return endlessQueue(day);
   const sc = DAY_SCRIPT[day];
   if (!sc) throw new Error(`no script for day ${day}`);
   const cast = sc.cast();
-  const left = shuffle(dayFlaws(day).slice());
+  const left = shuffle(currentKinds().slice());
   return sc.queue.map((it) => {
     if (typeof it !== 'string') return it.any ? randomEntrant(day, pick(it.any)) : it;
     if (Object.prototype.hasOwnProperty.call(cast, it)) return cast[it];
     if (it === 'rush' || it === 'clones') return { type: it };
-    if (it === 'random') return randomEntrant(day, left.length ? left.pop() : fallbackKind(day));
+    if (it === 'random') return randomEntrant(day, left.length ? left.pop() : fallbackKind());
     return randomEntrant(day, it);
   });
 }
+
+// ———— 无尽排班 ————
+// 不查 DAY_SCRIPT：种类来自已解锁条文，队伍逐日变长并封顶，桥段按固定节奏插入。
+// 三分之二的旅客撞在「今日重点查」那两条上，剩下的从全部已解锁种类里抽，保证老条文不会消失。
+function endlessQueue(n) {
+  const kinds = endlessKinds();
+  const focus = endlessFocus().flatMap((k) => RULE_KINDS[k] || []);
+  const size = Math.min(12, 5 + Math.floor(n / 2));
+  const q = [];
+  for (let i = 0; i < size; i++) q.push(randomEntrant(Math.max(2, n), pick(focus.length && i % 3 !== 2 ? focus : kinds)));
+  if (n >= 3 && n % 4 === 3) q.splice(2, 0, { type: 'rush' });
+  if (n >= 5 && n % 4 === 1) q.splice(3, 0, { type: 'clones' });
+  return q;
+}
+
+// 无尽模式没有逐日手写的报纸，用排班天数和今日重点拼一张。
+function endlessNews(n) {
+  const f = endlessFocus();
+  const head = (k) => (RULES.find((r) => r.key === k) || {}).head || '';
+  return {
+    h1: T('排班第 {0} 天', n),
+    sub: f.length ? T('今日重点：') + f.map((k) => T(head(k))).join(' + ') : T('全部条文生效中'),
+    h2: T('队列没有变短的意思。结算单上的电费涨了。'),
+    icon: ['gate', 'clock', 'plane', 'drumstick', 'jorji', 'medal'][n % 6],
+  };
+}
+
+const newsOf = (day) => (S.mode === 'endless' ? endlessNews(day) : NEWS[day]);
+
+// ———— 无尽排班的经济曲线 ————
+// 人数封顶 12、工资每 6 个班降一档、电费每多排一个班涨 1：三条一起把净收入压成负的，
+// 实测大约排在第 25 班前后欠费。不然无尽模式永远欠不了费，也就没有结束的时候。
+const wage = () => (S.mode === 'endless' ? Math.max(2, 5 - Math.floor(S.day / 6)) : 5);
+const powerBill = () => (S.mode === 'endless' ? 5 + S.day : 5);
 
 // 主线最后一天由剧本表推出：往 DAY_SCRIPT 里加一天，进度、存档和日期都自动多用一天。
 const LAST_DAY = Math.max(...Object.keys(DAY_SCRIPT).map(Number));
@@ -933,9 +1012,10 @@ const hasNextWeek = () => LAST_DAY > END_DAY;
 
 // 日期和星期也不手写：第 1 天是 2026.10.19（星期一），往后一天推一天。
 // 第 4 天正好落在星期四，「疯狂星期四」那条线是靠这个起点成立的，改起点要先看那一天。
+// 多生成 90 天，是为了让无尽排班也能报出日期，不用为它单开一条路径。
 const DATES = {}, WEEKDAYS = {};
 const WEEKDAY_NAMES = ['星期一', '星期二', '星期三', '星期四', '星期五', '星期六', '星期日'];
-for (let d = 1; d <= LAST_DAY; d++) {
+for (let d = 1; d <= LAST_DAY + 90; d++) {
   const t = new Date(2026, 9, 18 + d);
   DATES[d] = `${t.getFullYear()}.${String(t.getMonth() + 1).padStart(2, '0')}.${String(t.getDate()).padStart(2, '0')}`;
   WEEKDAYS[d] = WEEKDAY_NAMES[(t.getDay() + 6) % 7];

@@ -28,6 +28,7 @@
 - 9 days, 5 endings and an ending file; about 45 minutes; autosaves at the end of every day
 - The original six days are untouched. When Day 6 ends you can stop there, or press "Clock in next week" and start week two
 - New entry records: someone you deny comes back in a better disguise, and the same flaw left unchanged gets refused (§7). From Day 8 the records themselves are forged — look for the ministry seal (§8)
+- Choose a mode at the start: the 9-day story, or Endless shift. In Endless, articles unlock one per shift, the token rate drops every six shifts and the power bill climbs every shift, so suspension eventually comes; your best run is saved on its own
 - English / 简体中文, chosen on the start screen
 - Drag papers with a mouse, or with your finger on a phone (landscape)
 - A plain static web page that loads nothing external; download the repo and double-click `index.html` to play offline

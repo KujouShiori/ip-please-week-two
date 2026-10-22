@@ -654,6 +654,17 @@ const EN = {
   '下周继续上班 ▶': 'Clock in next week ▶',
   '回家 ▶': 'Go home ▶',
   '罚款（放行家人）': 'Fine (let family in)',
+
+  // ———————————————— 无尽排班 ————————————————
+  '无尽排班': 'Endless shift',
+  '排班第 {0} 天': 'Shift {0}',
+  '今日重点：': 'Today’s focus: ',
+  '全部条文生效中': 'All articles in force',
+  '队列没有变短的意思。结算单上的电费涨了。': 'The queue is not getting shorter. The power line on your statement grew.',
+  ' · 无尽最佳第 {0} 天': ' · endless best: shift {0}',
+  '排班结束': 'SHIFT ENDED',
+  '你的机柜被拉闸了。这一班排到第 {0} 天，最佳第 {1} 天。': 'Your rack got pulled from the power. You lasted {0} shifts; your best is {1}.',
+  '重新排班': 'Another shift',
   '第二周': 'Week Two',
   '{0} · {1} 天 · 基于 IP, PLEASE 原版 · {2}': '{0} · {1} days · a fork of IP, PLEASE · by {2}',
 };

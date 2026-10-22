@@ -205,7 +205,7 @@ function judge(e, dec) {
   }
   if (spec.ok.includes(dec)) {
     B.correct++; S.stats.correct++;
-    B.pay += 5;
+    B.pay += wage();
     if (dec === 'detain' && e.exposed) B.bonus += 5;
     return;
   }
@@ -806,8 +806,9 @@ function hintText() {
   }
   if (S.day === 3 && !T.account && B.idx <= 2) return '新：账户卡。可疑的付款/账单/手机号，和宪法 §4 一起点';
   if (S.day === 4 && !T.xray) return '新：右下『X光』扫描口袋；检查模式下可以直接点可疑物品';
-  if (S.day === 7 && !T.record && B.idx <= 2) return '新：入境记录。把档案的『事由』和证件上同一栏、或和宪法 §7 一起点';
-  if (S.day === 8 && !T.forged && B.idx <= 2) return '新：代办点打的记录没有圆印。档案写「无矛盾」也别信，照着证件查';
+  const fresh = rulesNewOn(S.day).map((r) => r.key);
+  if (fresh.includes('repeat') && !T.record && B.idx <= 2) return '新：入境记录。把档案的『事由』和证件上同一栏、或和宪法 §7 一起点';
+  if (fresh.includes('record') && !T.forged && B.idx <= 2) return '新：代办点打的记录没有圆印。档案写「无矛盾」也别信，照着证件查';
   return '';
 }
 

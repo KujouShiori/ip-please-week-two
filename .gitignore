@@ -1,3 +1,6 @@
 __pycache__/
 *.pyc
 .DS_Store
+
+# 演示录像的中间产物：抓帧 PNG、流水账 CSV、合成的 mp4/gif 都不进仓库
+tools/demo/out/

@@ -96,8 +96,31 @@ function typedSounds(lines) {
   }
 }
 
-const CONTINUE_TITLE = [190, 292, 312, 318], NEWGAME_TITLE = [328, 292, 450, 318], ENDLESS_TITLE = [466, 292, 588, 318];
-const CODEX_LINE = [212, 336, 428, 354];   // 标题画面底部那行「结局档案」
+// 标题那排入口：有没有「继续」会让项数在 2 和 3 之间变，整排按项数居中，绘制和点击共用这一份算法。
+const TITLE_BTN_W = 122, TITLE_BTN_GAP = 16, TITLE_BTN_Y0 = 292, TITLE_BTN_Y1 = 318;
+function titleMenu() {
+  const save = loadSave();
+  const items = [];
+  if (save) items.push(['continue', T('继续 · DAY {0}', save.day)]);
+  items.push(['story', T('从头开始')], ['endless', T('无尽排班')]);
+  const span = items.length * TITLE_BTN_W + (items.length - 1) * TITLE_BTN_GAP;
+  const x0 = Math.round((W - span) / 2);
+  return items.map(([mode, label], i) => {
+    const x = x0 + i * (TITLE_BTN_W + TITLE_BTN_GAP);
+    return { mode, label, box: [x, TITLE_BTN_Y0, x + TITLE_BTN_W, TITLE_BTN_Y1] };
+  });
+}
+
+// 底部那行「结局档案」会带上无尽最佳，文字有长有短，判定框跟着文字量走，别只留中间一截能点。
+function codexLine() {
+  const got = unlockedEndings(), best = bestEndless();
+  const s = T('结局档案 {0} / {1} · 点击查看', got.size, ENDING_IDS.length);
+  return best ? s + T(' · 无尽最佳第 {0} 天', best) : s;
+}
+function codexBox() {
+  const half = Math.round(tw(codexLine(), 8) / 2);
+  return [W / 2 - half, 336, W / 2 + half, 354];
+}
 
 function drawTitle(t) {
   drawBg();
@@ -111,20 +134,13 @@ function drawTitle(t) {
   if (t >= 1.6) txt(W / 2, 268, 'A DYSTOPIAN TOKEN THRILLER', 8, K.GREY, 'ma');
   if (t >= 1.6) txt(W / 2, 282, T('{0} · {1} 天 · 基于 IP, PLEASE 原版 · {2}', MOD.subtitle, LAST_DAY, MOD.author), 8, K.GREY_D, 'ma');
   if (t < 1.6) return;
-  const save = loadSave();
-  // 没有主线存档时两个入口往左挪一格，整排仍然居中
-  const boxes = [];
-  if (save) boxes.push([CONTINUE_TITLE, T('继续 · DAY {0}', save.day)]);
-  boxes.push([save ? NEWGAME_TITLE : CONTINUE_TITLE, T('从头开始')]);
-  boxes.push([save ? ENDLESS_TITLE : NEWGAME_TITLE, T('无尽排班')]);
-  for (const [box, label] of boxes) {
+  for (const { box, label } of titleMenu()) {
     const hover = ptr.mouse && inBox(ptr.x, ptr.y, box);
     rect(...box, hover ? K.RED : K.RED_D); outline(...box, K.RED_L);
     txt(center(box)[0], box[1] + 7, label, 12, K.WHITE, 'ma');
   }
-  const got = unlockedEndings(), best = bestEndless();
-  const codexLine = T('结局档案 {0} / {1} · 点击查看', got.size, ENDING_IDS.length);
-  txt(W / 2, 340, best ? codexLine + T(' · 无尽最佳第 {0} 天', best) : codexLine, 8, K.GREY_D, 'ma');
+  const line = codexLine();
+  txt(W / 2, 340, line, 8, K.GREY_D, 'ma');
 }
 
 function drawCodex(t) {
@@ -147,12 +163,12 @@ function drawCodex(t) {
 
 function titleClick(x, y) {
   if (st() < 1.6) return;
-  if (unlockedEndings().size && inBox(x, y, CODEX_LINE)) { go('codex'); return; }
-  const save = loadSave();
-  const startBox = save ? NEWGAME_TITLE : CONTINUE_TITLE, endlessBox = save ? ENDLESS_TITLE : NEWGAME_TITLE;
-  if (save && inBox(x, y, CONTINUE_TITLE)) { newGame(); Object.assign(S, save); go('daycard'); return; }
-  if (inBox(x, y, startBox)) { clearSave('story'); newGame('story'); go('daycard'); return; }
-  if (inBox(x, y, endlessBox)) { clearSave('endless'); newGame('endless'); go('daycard'); }
+  if (unlockedEndings().size && inBox(x, y, codexBox())) { go('codex'); return; }
+  for (const { mode, box } of titleMenu()) {
+    if (!inBox(x, y, box)) continue;
+    if (mode === 'continue') { const save = loadSave(); newGame(); Object.assign(S, save); go('daycard'); return; }
+    clearSave(mode); newGame(mode); go('daycard'); return;
+  }
 }
 
 function drawDayCard(t) {

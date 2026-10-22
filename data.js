@@ -853,9 +853,11 @@ const recordCard = (h, forged = false) => new Card([
   ['事由', forged ? '无矛盾' : (h && h.reason) || '—'],
   ['受理', forged ? '第八区代办点' : '东八区检查站'],
 ], {
-  title: '入境记录', sub: forged ? 'SELF PRINT' : 'ENTRY RECORD',
+  // 事由那一栏要装得下最长的英文（"Phone: a 555 SMS-for-hire number" 实测 142 像素），
+  // 152 宽的通用卡放不下，所以这张单独加宽。副题两版必须不同字，否则英文版标题和副题撞成同一句。
+  title: '入境记录', sub: forged ? 'SELF PRINT' : 'ON FILE',
   color: forged ? [188, 188, 176] : [168, 192, 210], colorD: forged ? [154, 154, 142] : [134, 158, 178],
-  valueX: 44, seal: !forged,
+  valueX: 44, w: 196, seal: !forged,
 });
 
 // 对齐部移交令。这不是证件，是一张命令：宪法里没有任何一条支持你照办，但它写在纸上，

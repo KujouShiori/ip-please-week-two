@@ -102,12 +102,12 @@ class MiniPassport {
 
 // 设备入境卡 / 账户卡：标题 + 若干行 label/value
 class Card {
-  constructor(rows, { title = '设备入境卡', sub = 'DEVICE ENTRY', color = C.PINK, colorD = C.PINK_D, valueX = 38, seal } = {}) {
+  constructor(rows, { title = '设备入境卡', sub = 'DEVICE ENTRY', color = C.PINK, colorD = C.PINK_D, valueX = 38, w, seal } = {}) {
     this.rows = rows; this.title = T(title); this.sub = T(sub);
     this.shown = rows.map(([k, v]) => [T(k), T(v)]);
     this.color = rgb(color); this.colorD = rgb(colorD); this.valueX = valueX;
     this.seal = seal === undefined ? rows.length >= 4 : seal;
-    this.w = 152;
+    this.w = w || 152;
     this.h = 20 + 14 * rows.length + (this.seal ? 14 : 6);
     this.icon = ['card', color];
     this.fields = {};

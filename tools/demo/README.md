@@ -66,6 +66,13 @@ python tools/demo/encode.py gif   story-cut 主线精选 --fps 15 --range 5600-5
 | `<mode>-<tag>-people.csv` | 一名旅客一行：想要什么章、盖了什么章、对不对 |
 | `<mode>-<tag>-marks.json` | 每名旅客在录像里的起止帧号 |
 | `<mode>-<tag>-notes.txt` | 机器人自己的异常。**跑完必看，正常应该是空的** |
+| `playthrough-stats.xlsx` | 上面几份流水账合成的表：概览 / 主线逐日 / 主线逐人 / 无尽逐日 / 无尽逐人 |
+
+要出这张表：
+
+```bash
+python tools/demo/report.py           # 只用标准库写 xlsx，不额外装 openpyxl
+```
 
 主线 9 天 65 人全对、无尽 1000 班 11951 人全对，两份 notes 都是空的——
 这既是录像的质检，也是「无尽排班真的能无限玩」的证据。

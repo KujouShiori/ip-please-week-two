@@ -159,7 +159,7 @@ function drawDayCard(t) {
   rect(0, 0, W - 1, H - 1, K.INK);
   if (t < 0.55) return;
   bigText(W / 2, 132, `DAY ${S.day}`, 12, 4, K.WHITE);
-  txt(W / 2, 196, `${DATES[S.day]}  ${T(WEEKDAYS[S.day])}`, 10, K.GREY, 'ma');
+  txt(W / 2, 196, `${dateOf(S.day)}  ${T(weekdayOf(S.day))}`, 10, K.GREY, 'ma');
 }
 
 function drawNews(t) {
@@ -174,7 +174,7 @@ function drawNews(t) {
   const ink = 'rgb(40,34,30)', faint = 'rgb(176,164,144)';
   rect(px, py, px + pw, py + ph, 'rgb(224,214,192)');
   bigText(px + pw / 2, py + 10, T('安索兹卡真理报'), 12, 2, ink);
-  txt(px + pw / 2, py + 38, T('THE TRUTH OF ANTHROTZKA  ·  {0}', DATES[S.day]), 8, K.TEXT_L, 'ma');
+  txt(px + pw / 2, py + 38, T('THE TRUTH OF ANTHROTZKA  ·  {0}', dateOf(S.day)), 8, K.TEXT_L, 'ma');
   rect(px + 10, py + 50, px + pw - 10, py + 51, ink);
   rect(px + 10, py + 54, px + pw - 10, py + 54, ink);
   const k = tw(n.h1) * 2 <= pw - 24 ? 2 : 1;

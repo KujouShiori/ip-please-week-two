@@ -1034,14 +1034,13 @@ const hasNextWeek = () => LAST_DAY > END_DAY;
 
 // 日期和星期也不手写：第 1 天是 2026.10.19（星期一），往后一天推一天。
 // 第 4 天正好落在星期四，「疯狂星期四」那条线是靠这个起点成立的，改起点要先看那一天。
-// 多生成 400 天：无尽排班没有终点，日期不能是它撞上的第一堵墙。
-const DATES = {}, WEEKDAYS = {};
+// 按天号现算而不是摊成一张表：无尽排班没有终点，任何长度都会先撞上表的右边界。
 const WEEKDAY_NAMES = ['星期一', '星期二', '星期三', '星期四', '星期五', '星期六', '星期日'];
-for (let d = 1; d <= LAST_DAY + 400; d++) {
+const dateOf = (d) => {
   const t = new Date(2026, 9, 18 + d);
-  DATES[d] = `${t.getFullYear()}.${String(t.getMonth() + 1).padStart(2, '0')}.${String(t.getDate()).padStart(2, '0')}`;
-  WEEKDAYS[d] = WEEKDAY_NAMES[(t.getDay() + 6) % 7];
-}
+  return `${t.getFullYear()}.${String(t.getMonth() + 1).padStart(2, '0')}.${String(t.getDate()).padStart(2, '0')}`;
+};
+const weekdayOf = (d) => WEEKDAY_NAMES[(new Date(2026, 9, 18 + d).getDay() + 6) % 7];
 for (let d = 1; d <= LAST_DAY; d++) if (!NEWS[d]) throw new Error(`no newspaper for day ${d}`);
 
 // 黑话快剪：说中文黑话的拒绝，说人话的放行

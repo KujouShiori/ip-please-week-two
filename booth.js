@@ -711,7 +711,7 @@ function drawBoothLower() {
     if (ln.who === 'C') rect(x0, y, x0 + 1, y + 15, K.CLAUDE);
     txt(35, y + (size === 12 ? 2 : size === 10 ? 3 : 4), ln.text, size, ln.who === 'C' ? K.CLAUDE_L : K.WHITE, 'la', n);
   }
-  txt(8, 347, `${DATES[S.day]}  ${T(WEEKDAYS[S.day])}`, 10, K.GREY);
+  txt(8, 347, `${dateOf(S.day)}  ${T(weekdayOf(S.day))}`, 10, K.GREY);
   const m = 6 * 60 + Math.floor((now - B.clock0) / 1.1);
   txt(210, 346, `${String(Math.floor(m / 60) % 24).padStart(2, '0')}:${String(m % 60).padStart(2, '0')}`, 12, K.LED, 'ra');
   if (toolReady('detain')) {

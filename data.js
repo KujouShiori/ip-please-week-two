@@ -175,9 +175,14 @@ function realPay() { return `${pick(['VISA', 'VISA', 'MASTERCARD', 'AMEX'])} ·�
 const REGION_ISSUE = (loc, ask) => ({
   pairs: [['dv.归属', 'rule.region'], ['dv.IP', 'rule.region']], title: '地区不支持', sub: T('IP 归属：{0}', loc), ask,
 });
+// 无尽模式里同一个毛病要有不同长相，否则十二个人连着三个都写北京时间，看着像复制粘贴。
+// 这几个时区对自称美国来的旅客都是矛盾，§2 的判定照样成立。主线不用这张表。
+const TZ_ALT = { 'Asia/Shanghai': '北京时间', 'Asia/Hong_Kong': '香港时间', 'Asia/Urumqi': '乌鲁木齐时间', 'UTC+8': '东八区' };
+const LANG_ALT = ['zh-CN', 'zh-TW', 'zh-HK'];
+
 const TZ_ISSUE = (country, tz, ask) => ({
   pairs: [['pp.header', 'dv.时区'], ['dv.归属', 'dv.时区'], ['dv.时区', 'rule.tz']],
-  title: '信息不符  DISCREPANCY', sub: T('国籍：{0}   VS   时区：{1}', country, tz === 'Asia/Shanghai' ? '北京时间' : tz), ask,
+  title: '信息不符  DISCREPANCY', sub: T('国籍：{0}   VS   时区：{1}', country, TZ_ALT[tz] || tz), ask,
 });
 const LANG_ISSUE = (country, lang, ask) => ({
   pairs: [['pp.header', 'dv.语言'], ['dv.归属', 'dv.语言'], ['dv.语言', 'rule.tz']],
@@ -751,14 +756,17 @@ function randomEntrant(day, kind, who) {
     ok: ['approve'], react: { approve: [['E', pick(co.thanks)]] },
   };
   const nervous = (lines) => ['E', pick(lines), { sweat: true, expr: 'nervous' }];
+  // 同类毛病在无尽里换着长相出现，主线一个字都不动（README 里承诺过原版 6 天未作改动）。
+  const alt = S.mode === 'endless';
   if (kind === 'tz') {
-    tz = 'Asia/Shanghai';
-    spec.issues.push(TZ_ISSUE(co.name, tz, [['C', '你的时区是北京时间。'], nervous(['……我刚从北京出差回来。', '时区是什么？', '我电脑坏了。', '……这是美国东八区。'])]));
-    spec.reason = '时区：北京时间';
+    tz = alt ? pick(Object.keys(TZ_ALT)) : 'Asia/Shanghai';
+    const label = TZ_ALT[tz];
+    spec.issues.push(TZ_ISSUE(co.name, tz, [['C', alt ? T('你的时区是{0}。', label) : '你的时区是北京时间。'], nervous(['……我刚从北京出差回来。', '时区是什么？', '我电脑坏了。', '……这是美国东八区。'])]));
+    spec.reason = alt ? T('时区：{0}', label) : '时区：北京时间';
   } else if (kind === 'lang') {
-    lang = 'zh-CN';
-    spec.issues.push(LANG_ISSUE(co.name, lang, [['C', '你的浏览器语言是简体中文。'], nervous(['……这是我奶奶的电脑。', '……我在学中文。', 'Chinese is beautiful!'])]));
-    spec.reason = '浏览器语言：zh-CN';
+    lang = alt ? pick(LANG_ALT) : 'zh-CN';
+    spec.issues.push(LANG_ISSUE(co.name, lang, [['C', alt ? T('你的浏览器语言是{0}。', lang) : '你的浏览器语言是简体中文。'], nervous(['……这是我奶奶的电脑。', '……我在学中文。', 'Chinese is beautiful!'])]));
+    spec.reason = alt ? T('浏览器语言：{0}', lang) : '浏览器语言：zh-CN';
   } else if (kind === 'cnip') {
     loc = pick(CN_LOCS.slice(0, 4));
     ip = randIP(true);

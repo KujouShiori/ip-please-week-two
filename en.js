@@ -666,6 +666,15 @@ const EN = {
   '排班结束': 'SHIFT ENDED',
   '你的机柜被拉闸了。这一班排到第 {0} 天，最佳第 {1} 天。': 'Your rack got pulled from the power. You lasted {0} shifts; your best is {1}.',
   '重新排班': 'Another shift',
+
+  // 无尽模式里同类毛病的多种长相（主线只用北京时间、简体中文那一条）
+  '时区：{0}': 'Timezone: {0}',
+  '你的时区是{0}。': 'Your timezone is {0}.',
+  '浏览器语言：{0}': 'Browser language: {0}',
+  '你的浏览器语言是{0}。': 'Your browser language is {0}.',
+  '香港时间': 'Hong Kong Time',
+  '乌鲁木齐时间': 'Urumqi Time',
+  '东八区': 'UTC+8',
   '第二周': 'Week Two',
   '{0} · {1} 天 · 基于 IP, PLEASE 原版 · {2}': '{0} · {1} days · a fork of IP, PLEASE · by {2}',
 };

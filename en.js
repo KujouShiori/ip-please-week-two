@@ -654,6 +654,7 @@ const EN = {
   '下周继续上班 ▶': 'Clock in next week ▶',
   '回家 ▶': 'Go home ▶',
   '罚款（放行家人）': 'Fine (let family in)',
+  '罚款：{0} token': 'Fine: {0} token',
 
   // ———————————————— 无尽排班 ————————————————
   '无尽排班': 'Endless shift',

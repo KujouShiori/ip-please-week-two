@@ -1010,10 +1010,12 @@ function endlessNews(n) {
 const newsOf = (day) => (S.mode === 'endless' ? endlessNews(day) : NEWS[day]);
 
 // ———— 无尽排班的经济曲线 ————
-// 人数封顶 12、工资每 6 个班降一档、电费每多排一个班涨 1：三条一起把净收入压成负的，
-// 实测大约排在第 25 班前后欠费。不然无尽模式永远欠不了费，也就没有结束的时候。
-const wage = () => (S.mode === 'endless' ? Math.max(2, 5 - Math.floor(S.day / 6)) : 5);
-const powerBill = () => (S.mode === 'endless' ? 5 + S.day : 5);
+// 工资和电费跟主线一样（每人 5、每天 5），所以一路零失误就一定净赚，能无限排下去。
+// 压力全在罚款上：每 8 个班涨一档，5→10→15→20 封底，越往后错一次越贵。
+// 也就是说杀死你的不是时间，是失误率——队伍越来越长、毛病越来越隐蔽，你迟早会错一次。
+const wage = () => 5;
+const powerBill = () => 5;
+const fineCost = () => (S.mode === 'endless' ? Math.min(20, 5 + Math.floor(S.day / 8) * 5) : 5);
 
 // 主线最后一天由剧本表推出：往 DAY_SCRIPT 里加一天，进度、存档和日期都自动多用一天。
 const LAST_DAY = Math.max(...Object.keys(DAY_SCRIPT).map(Number));
@@ -1024,10 +1026,10 @@ const hasNextWeek = () => LAST_DAY > END_DAY;
 
 // 日期和星期也不手写：第 1 天是 2026.10.19（星期一），往后一天推一天。
 // 第 4 天正好落在星期四，「疯狂星期四」那条线是靠这个起点成立的，改起点要先看那一天。
-// 多生成 90 天，是为了让无尽排班也能报出日期，不用为它单开一条路径。
+// 多生成 400 天：无尽排班没有终点，日期不能是它撞上的第一堵墙。
 const DATES = {}, WEEKDAYS = {};
 const WEEKDAY_NAMES = ['星期一', '星期二', '星期三', '星期四', '星期五', '星期六', '星期日'];
-for (let d = 1; d <= LAST_DAY + 90; d++) {
+for (let d = 1; d <= LAST_DAY + 400; d++) {
   const t = new Date(2026, 9, 18 + d);
   DATES[d] = `${t.getFullYear()}.${String(t.getMonth() + 1).padStart(2, '0')}.${String(t.getDate()).padStart(2, '0')}`;
   WEEKDAYS[d] = WEEKDAY_NAMES[(t.getDay() + 6) % 7];

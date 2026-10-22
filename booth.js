@@ -216,11 +216,12 @@ function judge(e, dec) {
   cite(lines);
 }
 
-// 开一张警告单：每天第一张只警告，之后每张罚 5 token
+// 开一张警告单：每天第一张只警告，之后每张罚一笔（无尽模式每 8 个班涨一档）
 function cite(lines, delay = 0.5) {
   B.cites++;
-  if (B.cites > 1) B.fines += 5;
-  lines.push(B.cites > 1 ? '罚款：5 token' : '首次警告，不扣 token');
+  const fine = fineCost();
+  if (B.cites > 1) B.fines += fine;
+  lines.push(B.cites > 1 ? T('罚款：{0} token', fine) : '首次警告，不扣 token');
   later(delay, () => printDoc(new Citation(lines), 1.1, 'cit'));
 }
 

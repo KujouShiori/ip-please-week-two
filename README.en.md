@@ -71,6 +71,8 @@ Call the next traveler → drag their papers onto the desk → check them agains
 | 8 | §8 records must be issued here: bureau paper carries no seal |
 | 9 | The audit team and a transfer order; the last traveler is not a traveler |
 
+Stats and the full per-traveler answer key from a flawless 9-day run, plus 1000 endless shifts, are in [docs/playthrough.md](docs/playthrough.md) — spoilers, and that file is in Chinese.
+
 ## How this fork relates to the original
 
 The original is [ip-please/ip-please.github.io](https://github.com/ip-please/ip-please.github.io), playable at [ip-please.github.io](https://ip-please.github.io), and stays at six days. Upstream only takes bug fixes and experience improvements — new mechanics are meant to ship as separate mods — which is why week two lives here.
@@ -108,6 +110,7 @@ Both are MIT. The full mod list is maintained upstream — see [the original REA
 | `tools/` | Asset tools: `pp/` draws the characters and scenes, `assets/fonts/` holds the pixel fonts; `check_en.js` finds missing translations |
 | `tools/demo/` | How the GIFs above were made: a bot drives the real engine through a full playthrough, frames get captured, ffmpeg assembles them |
 | `media/` | Logo and gameplay GIFs for the README, link preview card `og.png` |
+| `docs/playthrough.md` | Stats and the per-traveler answer key from a flawless run of all 9 days and 1000 endless shifts (spoilers, in Chinese) |
 
 ## Editing and rebuilding assets
 

@@ -71,6 +71,8 @@ https://kujoushiori.github.io/ip-please-week-two
 | 8 | §8 记录须本站出：代办点的假档没有圆印 |
 | 9 | 审计组与移交令；最后一位旅客不是旅客 |
 
+一路零失误跑完 9 天、再跑 1000 个班的统计与逐人判定表（剧透）见 [docs/playthrough.md](docs/playthrough.md)。
+
 ## 这个分支和原版的关系
 
 原版是 [ip-please/ip-please.github.io](https://github.com/ip-please/ip-please.github.io)，在线玩在 [ip-please.github.io](https://ip-please.github.io)，只有 6 天。上游只收 bug 修复和体验优化，不接受新增游戏机制的 PR，新玩法一律做成 mod 各自发布——所以第二周做在这个分支里。
@@ -108,6 +110,7 @@ https://kujoushiori.github.io/ip-please-week-two
 | `tools/` | 素材生成工具：`pp/` 是人物和场景的像素画法，`assets/fonts/` 是像素字体；`check_en.js` 查漏翻 |
 | `tools/demo/` | 上面那些动图的来历：机器人驱动真引擎通关 → 抓帧 → ffmpeg 合成，见该目录的 README |
 | `media/` | README 用的 logo、游戏动图，以及链接分享卡片 `og.png` |
+| `docs/playthrough.md` | 一路零失误跑完 9 天与 1000 个班的统计、逐人判定表（剧透） |
 
 ## 修改与重建素材
 

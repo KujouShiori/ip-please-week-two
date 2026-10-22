@@ -233,47 +233,65 @@ function drawAddressCard(x, y) {
   txt(x + 6, y + 20, 'PORTLAND, OR', 8, K.TEXT_L);
 }
 
-// 《Claude 宪法》：当天的入境规则，分两页。每条规则是一个可在检查模式里点选的栏位。
+// 《Claude 宪法》：按生效顺序列出当天及以前所有规则，排不下一页自动翻页（见 Rulebook）。
+// 每条规则是一个可在检查模式里点选的栏位。
 const RULE_TABLE = [
   ['美国', 'America/*', 'en-US'], ['英国', 'Europe/London', 'en-GB'], ['日本', 'Asia/Tokyo', 'ja-JP'],
   ['德国', 'Europe/Berlin', 'de-DE'], ['新加坡', 'Asia/Singapore', 'en-SG'],
 ];
 const RULES = [
-  { day: 1, page: 0, key: 'region', head: '§1 仅限支持地区入境', subs: ['支持：美国  英国  日本  德国  新加坡', '不支持：中国大陆  中国香港  中国澳门'] },
-  { day: 2, page: 0, key: 'tz', head: '§2 时区、语言须与 IP 归属一致', subs: RULE_TABLE.map((r) => r.join('|')) },
-  { day: 2, page: 0, key: 'quiz', head: '§3 测谎露馅者：拘留', subs: ['有疑点才能测谎（证件矛盾 / 话里的马脚）'] },
-  { day: 3, page: 1, key: 'pay', head: '§4 付款、账单、手机须真实', subs: ['禁止：虚拟卡、555 接码手机号', '账单所在州须与 IP 归属一致', '禁止拼车：一本护照只能一个人用'] },
-  { day: 4, page: 1, key: 'xray', head: '§5 后台进程须干净', subs: ['禁止“小猫咪”、中文输入法（『X光』）'] },
-  { day: 5, page: 1, key: 'corp', head: '§6 中资控股过半：一律禁止', subs: ['无论公司注册在哪（套娃要拆到底）'] },
+  { day: 1, key: 'region', head: '§1 仅限支持地区入境', subs: ['支持：美国  英国  日本  德国  新加坡', '不支持：中国大陆  中国香港  中国澳门'] },
+  { day: 2, key: 'tz', head: '§2 时区、语言须与 IP 归属一致', subs: RULE_TABLE.map((r) => r.join('|')) },
+  { day: 2, key: 'quiz', head: '§3 测谎露馅者：拘留', subs: ['有疑点才能测谎（证件矛盾 / 话里的马脚）'] },
+  { day: 3, key: 'pay', head: '§4 付款、账单、手机须真实', subs: ['禁止：虚拟卡、555 接码手机号', '账单所在州须与 IP 归属一致', '禁止拼车：一本护照只能一个人用'] },
+  { day: 4, key: 'xray', head: '§5 后台进程须干净', subs: ['禁止“小猫咪”、中文输入法（『X光』）'] },
+  { day: 5, key: 'corp', head: '§6 中资控股过半：一律禁止', subs: ['无论公司注册在哪（套娃要拆到底）'] },
+  { day: 7, key: 'repeat', head: '§7 再犯须调阅入境记录', subs: ['与上次记录同一处矛盾：拒绝', '已改正者按本次证件判定（§12）'] },
+  { day: 8, key: 'record', head: '§8 记录须本站出', subs: ['代办点打印的没有圆印：作废', '记录说没矛盾、证件上却有：按证件办'] },
 ];
+
+// 当天是否有新条文（宪法上标 NEW、检查亭提示玩家去翻，都由它决定）
+const hasNewRule = (day) => RULES.some((r) => r.day === day);
+
+// 单页可用高度。按 6 天现有条文，刚好排成「§1–§3」一页、「§4–§6＋§12」一页；条文再多会自动添页。
+const RULE_PAGE_MAX = 160;
 
 class Rulebook {
   constructor(day) {
     this.day = day;
     this.w = 200;
     this.icon = ['book', C.BOOK];
-    const rules = RULES.filter((r) => r.day <= day);
-    this.npages = day >= 3 ? 2 : 1;
-    this.pages = [];
-    for (let p = 0; p < this.npages; p++) {
-      const L = [];
-      for (const r of rules.filter((q) => q.page === p)) {
-        L.push({ s: T(r.head), size: 10, col: r.day === day ? K.RED_D : K.TEXT, key: r.key, isNew: r.day === day });
-        for (const s of r.subs) L.push({ s: s.includes('|') ? s : T(s), size: 8, col: K.TEXT_L, key: r.key });
-      }
-      if (p === this.npages - 1) L.push({ s: T('§12 只看地区，不看脸'), size: 8, col: K.TEXT_L, key: null });
+    const lineH = (row) => (row.size === 10 ? 14 : 10);
+    // 一条规则连同它的说明行是一块，一块放不进当前页就整块挪到下一页，不做跨页截断。
+    // §12 是最后一块，于是永远落在末页。
+    const blocks = RULES.filter((r) => r.day <= day).map((r) => [
+      { s: T(r.head), size: 10, col: r.day === day ? K.RED_D : K.TEXT, key: r.key, isNew: r.day === day },
+      ...r.subs.map((s) => ({ s: s.includes('|') ? s : T(s), size: 8, col: K.TEXT_L, key: r.key })),
+    ]);
+    blocks.push([{ s: T('§12 只看地区，不看脸'), size: 8, col: K.TEXT_L, key: null }]);
+    const chunks = [];
+    let cur = null, used = 0;
+    for (const b of blocks) {
+      const h = b.reduce((n, row) => n + lineH(row), 0);
+      if (cur && used + h > RULE_PAGE_MAX) cur = null;
+      if (!cur) { cur = []; chunks.push(cur); used = 22; }
+      cur.push(...b);
+      used += h;
+    }
+    this.pages = chunks.map((L) => {
       let y = 22;
       const fields = {};
       for (const row of L) {
         row.y = y;
-        y += row.size === 10 ? 14 : 10;
+        y += lineH(row);
         if (row.key) {
           const f = fields[row.key];
           fields[row.key] = f ? [f[0], f[1], f[2], y - 2] : [4, row.y - 2, this.w - 5, y - 2];
         }
       }
-      this.pages.push({ rows: L, fields, h: y + 6 });
-    }
+      return { rows: L, fields, h: y + 6 };
+    });
+    this.npages = this.pages.length;
     this.h = Math.max(...this.pages.map((p) => p.h));
     this.page = this.npages - 1;
     this.tab = [this.w - 52, 3, this.w - 4, 16];

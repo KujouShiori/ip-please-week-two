@@ -4,7 +4,7 @@
 //   T('模板 {0}', x)    先翻模板，再把每个参数也翻一遍填进去
 // 英文模式下查不到的中文会在控制台提示一次（也可以跑 node tools/check_en.js 一次查全）。
 
-const LANG_KEY = 'ip-please-lang';
+const LANG_KEY = STORAGE_KEYS.lang;
 const CJK = /[\u3000-\u303f\u3400-\u9fff\uff00-\uffef]/;
 let LANG = initialLang();
 
@@ -45,7 +45,7 @@ function setLang(l) {
 function applyDomLang() {
   const root = document.documentElement;
   root.lang = LANG === 'en' ? 'en' : 'zh-CN';
-  document.title = T('IP, PLEASE · 请出示你的 IP');
+  document.title = T('IP, PLEASE · 请出示你的 IP') + (MOD.subtitle ? ' · ' + T(MOD.subtitle) : '');
   for (const el of document.querySelectorAll('#full, #rotate div, #rotate small, #rotate button')) {
     if (el.dataset.zh === undefined) el.dataset.zh = el.textContent;
     el.textContent = T(el.dataset.zh);

@@ -106,6 +106,7 @@ SCRIPTED = {
     "TOM": cast.TOM, "ALEX": cast.ALEX, "CAT_GIRL": cast.CAT_GIRL, "V50": cast.V50, "HOOD": cast.HOOD,
     "SG_MAN": cast.SG_MAN, "RELAY": cast.RELAY, "MIKE": cast.MIKE, "GRANDMA": cast.GRANDMA,
     "JORJI_SUIT": cast.JORJI_SUIT, "AUTHOR": cast.AUTHOR,
+    "OPUS": cast.OPUS, "AUDITOR": cast.AUDITOR,
     **{f"SLANG{i}": p for i, p in enumerate(cast.SLANG)},
 }
 GROUP_EXPRS = ["smile", "talk", "neutral", "shock", "sad", "nervous"]

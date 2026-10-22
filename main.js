@@ -58,7 +58,7 @@ function boothInput(x, y) {
 function boothDown(x, y) {
   if (B.insp.on) {
     if (inBox(x, y, INSPECT_BTN)) return setInspect(false);
-    if (S.day >= 4 && inBox(x, y, XRAY_BTN)) return setXray(!B.xray.on);
+    if (toolReady('xray') && inBox(x, y, XRAY_BTN)) return setXray(!B.xray.on);
     return inspectClick(x, y);
   }
   const tx = trayX(), u = trayU();
@@ -68,10 +68,10 @@ function boothDown(x, y) {
     if (inBox(x, y, [tx, TRAY_Y0, W - 1, TRAY_Y1])) return;
   }
   if (inBox(x, y, INSPECT_BTN)) return setInspect(true);
-  if (S.day >= 4 && inBox(x, y, XRAY_BTN)) return setXray(!B.xray.on);
+  if (toolReady('xray') && inBox(x, y, XRAY_BTN)) return setXray(!B.xray.on);
   if (inBox(x, y, SPEAKER)) return callNext();
-  if (S.day >= 2 && inBox(x, y, DETAIN_BTN)) return detain();
-  if (S.day >= 2 && inBox(x, y, QUIZ_BTN)) return quiz();
+  if (toolReady('detain') && inBox(x, y, DETAIN_BTN)) return detain();
+  if (toolReady('quiz') && inBox(x, y, QUIZ_BTN)) return quiz();
   for (const d of [...B.docs].reverse()) {
     const box = d.big ? docBox(d) : [d.x, d.y, d.x + 18, d.y + 12];
     if (d.big && !inBox(x, y, DESK)) continue;
@@ -140,9 +140,11 @@ function sceneClick(x, y) {
   if (scene === 'boot') { langClick(x, y); return; }
   if (scene === 'intro') { go('title'); return; }
   if (scene === 'title') { titleClick(x, y); return; }
+  if (scene === 'codex') { if (st() > 0.4) go('title'); return; }
   if (scene === 'news' && st() > 0.6) { go('booth'); return; }
   if (scene === 'summary') { summaryClick(x, y); return; }
   if (scene === 'erased' && st() > 1) { go('end'); return; }
+  if (scene === 'end' && st() > 2.4 && hasNextWeek() && S.day === END_DAY && inBox(x, y, WEEK_BTN)) { S.day++; saveGame(); go('daycard'); return; }
   if ((scene === 'end' || scene === 'over') && st() > 1.5 && inBox(x, y, RESTART_BTN)) { clearSave(); newGame(); go('daycard'); }
 }
 
@@ -169,6 +171,7 @@ function render() {
   else if (scene === 'intro') drawTyped(INTRO_LINES);
   else if (scene === 'erased') drawTyped(ERASED_LINES);
   else if (scene === 'title') drawTitle(t);
+  else if (scene === 'codex') drawCodex(t);
   else if (scene === 'daycard') drawDayCard(t);
   else if (scene === 'news') drawNews(t);
   else if (scene === 'booth') { if (inChat()) drawChat(); else drawBooth(); }

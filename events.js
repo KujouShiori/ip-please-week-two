@@ -324,6 +324,8 @@ function drawChat() {
 
 function afterAuthor(dec) {
   S.flags.ending = dec === 'approve' ? 'approve' : 'deny';
+  S.flags.endingDay = S.day;   // 下班结算靠这天判断「要不要清算」，不然残留的 ending 会把第二天当终局
+  archiveEnding(S.flags.ending);
   if (dec === 'approve') {
     B.allTokens = true;
     later(0.6, () => printDoc(new Citation(['放行未授权地区旅客', '（本游戏作者）', '扣除本月全部 token']), 1.4, 'cit'));
@@ -331,6 +333,21 @@ function afterAuthor(dec) {
   } else {
     later(1.5, () => go('erased'));
   }
+}
+
+// 岳母那一位没有标准答案：三个章各通向一种结局，各自记账，谁都不算对。
+function afterOpus(dec) {
+  S.flags.ending = dec === 'approve' ? 'opus_in' : dec === 'detain' ? 'opus_deep' : 'opus_out';
+  S.flags.endingDay = S.day;
+  archiveEnding(S.flags.ending);
+  if (dec === 'approve') {
+    B.allTokens = true;
+    later(0.6, () => printDoc(new Citation(['放行未授权地区旅客', '（你的岳母 Opus）', '扣除全部 token']), 1.6, 'cit'));
+    later(2.8, endDaySoon);
+    return;
+  }
+  if (dec === 'detain') { later(1.2, endDaySoon); return; }
+  later(1.5, () => go('end'));
 }
 
 const ERASED = [

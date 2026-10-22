@@ -178,14 +178,27 @@ function finish(e, dec) {
   if (then === 'closeup') { B.closeup = { t0: now }; SFX.play('thud'); }
   if (then === 'jorji5') afterJorji5(e, dec);
   if (then === 'ending') afterAuthor(dec);
-  if (B.idx >= B.queue.length && !B.cut && then !== 'ending') endDaySoon();
+  if (then === 'opus') afterOpus(dec);
+  if (B.idx >= B.queue.length && !B.cut && then !== 'ending' && then !== 'opus') endDaySoon();
+}
+
+// 记住这位旅客被怎么处置的：加长版里被拒过的人会换一身伪装再来（见 data.js 的 repeat 分支）。
+// 立绘名就是这个人的身份——同一张脸再来，档案里就查得到。
+function noteHistory(e, dec) {
+  const p = e.spec.person;
+  if (!p) return;
+  const h = (S.history[p] = S.history[p] || { times: 0 });
+  h.times++; h.day = S.day; h.dec = dec; h.kind = e.spec.kind || null; h.reason = e.spec.reason || '';
+  const prim = primaryOf(e);
+  if (prim && prim.doc.name) h.name = prim.doc.name;   // 移交令上要写得出名字，光有立绘名没用
 }
 
 function judge(e, dec) {
   const spec = e.spec;
   B.total++;
   S.stats[dec] = (S.stats[dec] || 0) + 1;
-  if (spec.author) return;
+  if (spec.author || spec.family) return;   // 作者和岳母都不按规则判定
+  noteHistory(e, dec);
   if (spec.bribe && dec === 'approve' && S.flags.sawNote) {
     B.bribe += 20; S.flags.bribed = true; B.harmlessT = now;
     later(0.8, () => flash('地下中转联盟：$20 余额已到账。合作愉快。'));
@@ -457,6 +470,8 @@ function showIssue(issue) {
   SFX.play('discrepancy', 1, 0.03);
   for (const s of I.sel) if (s.xr) e.found.add(s.key);
   if (/ac\.|rule\.pay/.test(JSON.stringify(issue.pairs || []))) S.tut.account = true;
+  if (/hs\.|rule\.repeat/.test(JSON.stringify(issue.pairs || []))) S.tut.record = true;
+  if (/hs\.受理|rule\.record/.test(JSON.stringify(issue.pairs || []))) S.tut.forged = true;
   if (issue.fx && !e.found.has(issue)) {
     if (issue.fx === 'pile') { B.effects.push({ type: 'pile', t0: now, ent: e }); for (let i = 0; i < 37; i += 2) later(i * 0.043, () => SFX.paper(i)); }
     if (issue.fx === 'strip') {
@@ -698,7 +713,7 @@ function drawBoothLower() {
   txt(8, 347, `${DATES[S.day]}  ${T(WEEKDAYS[S.day])}`, 10, K.GREY);
   const m = 6 * 60 + Math.floor((now - B.clock0) / 1.1);
   txt(210, 346, `${String(Math.floor(m / 60) % 24).padStart(2, '0')}:${String(m % 60).padStart(2, '0')}`, 12, K.LED, 'ra');
-  if (S.day >= 2) {
+  if (toolReady('detain')) {
     const can = B.ent && B.ent.phase === 'here' && B.ent.handed && !B.event;
     const lit = now < (B.detainT || -9) + 0.6;
     rect(...DETAIN_BTN, lit ? K.RED : K.RED_D); outline(...DETAIN_BTN, K.OUTLINE);
@@ -783,7 +798,7 @@ function hintText() {
     return '';
   }
   if (!here) return '';
-  if (S.day <= 5 && !B.ruleOpened) return '今天有新规：点右下角『宪法』看看（标着 NEW）';
+  if (!B.ruleOpened && hasNewRule(S.day)) return '今天有新规：点右下角『宪法』看看（标着 NEW）';
   if (S.day === 2) {
     if (!T.inspect) return '右下『?』检查模式：点两处矛盾的信息（如国籍和时区）';
     if (!T.tell && !e.suspect && B.idx >= 3) return '证件都对得上？用『检查』点 Ta 说的话，找马脚';
@@ -791,6 +806,8 @@ function hintText() {
   }
   if (S.day === 3 && !T.account && B.idx <= 2) return '新：账户卡。可疑的付款/账单/手机号，和宪法 §4 一起点';
   if (S.day === 4 && !T.xray) return '新：右下『X光』扫描口袋；检查模式下可以直接点可疑物品';
+  if (S.day === 7 && !T.record && B.idx <= 2) return '新：入境记录。把档案的『事由』和证件上同一栏、或和宪法 §7 一起点';
+  if (S.day === 8 && !T.forged && B.idx <= 2) return '新：代办点打的记录没有圆印。档案写「无矛盾」也别信，照着证件查';
   return '';
 }
 
@@ -819,7 +836,7 @@ function drawBooth() {
 
 function drawButtons() {
   button(RULE_BTN, '§', '宪法', !!B.ruleInst);
-  if (S.day >= 4) button(XRAY_BTN, 'X', 'X光', B.xray.on);
+  if (toolReady('xray')) button(XRAY_BTN, 'X', 'X光', B.xray.on);
   button(INSPECT_BTN, '?', '检查', B.insp.on);
 }
 

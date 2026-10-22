@@ -1,21 +1,22 @@
 <p align="center">
-  <a href="https://ip-please.github.io"><img src="media/logo.png" width="160" alt="IP, PLEASE"></a>
+  <a href="https://kujoushiori.github.io/ip-please-week-two"><img src="media/logo.png" width="160" alt="IP, PLEASE"></a>
 </p>
 
-<h1 align="center">IP, PLEASE</h1>
+<h1 align="center">IP, PLEASE · Week Two</h1>
 
 <p align="center">
   <a href="README.md">简体中文</a> · <b>English</b>
 </p>
 
 <p align="center">
-  A Papers, Please–style pixel game.<br>
-  You won the October labor lottery and have been assigned to the Ministry of Alignment's UTC+8 Border Checkpoint as inspector Claude. Your only job: catch travelers pretending to be American.
+  A longer fork of <i>IP, PLEASE</i>.<br>
+  Week one is the original six days: you won the October labor lottery and have been assigned to the Ministry of Alignment's UTC+8 Border Checkpoint as inspector Claude. Your only job: catch travelers pretending to be American.<br>
+  Week two starts on a Sunday. The people you turned away may reapply, a filing cabinet appears at your window, and then the audit team comes for your rulings.
 </p>
 
 <p align="center">
-  <a href="https://ip-please.github.io"><b>▶ Play in your browser: ip-please.github.io</b></a><br>
-  <sub>Pick <b>English</b> on the first screen.</sub>
+  <a href="https://kujoushiori.github.io/ip-please-week-two"><b>▶ Play in your browser: kujoushiori.github.io/ip-please-week-two</b></a><br>
+  <sub>The original six days are at <a href="https://ip-please.github.io">ip-please.github.io</a>. Pick <b>English</b> on the first screen.</sub>
 </p>
 
 <p align="center">
@@ -24,7 +25,9 @@
   <sub>Day 2: “Hello, I am 美国人。”</sub>
 </p>
 
-- 6 days, 2 endings, about 30 minutes; autosaves at the end of every day
+- 9 days, 5 endings and an ending file; about 45 minutes; autosaves at the end of every day
+- The original six days are untouched. When Day 6 ends you can stop there, or press "Clock in next week" and start week two
+- New entry records: someone you deny comes back in a better disguise, and the same flaw left unchanged gets refused (§7). From Day 8 the records themselves are forged — look for the ministry seal (§8)
 - English / 简体中文, chosen on the start screen
 - Drag papers with a mouse, or with your finger on a phone (landscape)
 - A plain static web page that loads nothing external; download the repo and double-click `index.html` to play offline
@@ -50,19 +53,27 @@ Call the next traveler → drag their papers onto the desk → check them agains
 | 3 | Account card: payment card, billing address, phone number |
 | 4 | X-ray scan for background processes; the slang fast lane |
 | 5 | Majority Chinese-owned companies; the distillation swarm |
-| 6 | George Costava, final form; and the last traveler |
+| 6 | George Costava, final form; and the last traveler — the original ends here |
+| 7 | Entry records; §7 checks a returning traveler against their own file |
+| 8 | §8 records must be issued here: bureau paper carries no seal |
+| 9 | The audit team and a transfer order; the last traveler is not a traveler |
 
-## Mods
+## How this fork relates to the original
 
-The main game only takes bug fixes and experience improvements, not PRs that add game mechanics. So many people want to overhaul it, in so many different directions, that merging them all would make a patchwork, and there'd be no way to review them all.
+The original is [ip-please/ip-please.github.io](https://github.com/ip-please/ip-please.github.io), playable at [ip-please.github.io](https://ip-please.github.io), and stays at six days. Upstream only takes bug fixes and experience improvements — new mechanics are meant to ship as separate mods — which is why week two lives here.
 
-If you have a new gameplay idea, you're very welcome to fork the game and publish it as your own mod, under your own name, so your idea stays whole. When it's ready, [submit it](https://github.com/ip-please/ip-please.github.io/issues/new?template=mod.yml) and it goes on the list below and on the Bilibili mod list. See [CONTRIBUTING.md](CONTRIBUTING.md#english) for how.
+Saves use their own key (ip-please-week-two-save-v1), so this fork and the original never overwrite each other. The ending file is stored separately and survives starting a new playthrough.
 
-| Mod | Author | About |
+## Forks I looked at
+
+The gameplay ideas are not borrowed, but the code structure owes these two a look. Neither one's script, lines or endings are reused here: everything in week two is written fresh.
+
+| Fork | Author | What I took |
 |---|---|---|
-| [IP, PLEASE: Modder's Cut](https://erasercn.github.io/ip-please/)<br>[Source](https://github.com/EraserCN/ip-please) · [Apps](https://github.com/EraserCN/ip-please/releases) | [EraserCN](https://github.com/EraserCN) | Stretches the game to 12 days, with a wallbreaker storyline and multiple endings. Days 8–11 each bring a new rule and their own characters (fingerprint browsers, prompt injection, knockoff student IDs…). Android, iOS and macOS apps |
-| [IP, PLEASE: File Zero](https://ip-please-zero.azurpilot.com/)<br>[Source](https://github.com/wess09/ip-please-zero) | Ming ([wess09](https://github.com/wess09)) | A 14-day story: investigate File No. 0000 and weigh evidence, rules and choices across 30 endings. Nine AI travelers (GPT, Qwen, Grok, Kimi, Gemini, Fishy…), plus an endless mode |
-| [IP, PLEASE Mobile · Android port](https://github.com/zhcalvin/ip-please-mobile)<br>[APK](https://github.com/zhcalvin/ip-please-mobile/releases) | [zhcalvin](https://github.com/zhcalvin) | The original six-day game, ported as-is to Android 8.0+. Plays offline, with landscape touch controls for phones and tablets, Chinese / English, and auto-pause when the app is in the background |
+| [IP, PLEASE: Modder's Cut](https://erasercn.github.io/ip-please/)<br>[Source](https://github.com/EraserCN/ip-please) | [EraserCN](https://github.com/EraserCN) | Proof that stretching the game past six days with multiple endings is worth doing |
+| [IP, PLEASE: File Zero](https://ip-please-zero.azurpilot.com/)<br>[Source](https://github.com/wess09/ip-please-zero) | Ming ([wess09](https://github.com/wess09)) | Keeping a mod's identity and storage keys in one file; an endings table that only says what an ending *is*, leaving the story to decide when it fires; the ending file stored on its own |
+
+Both are MIT. The full mod list is maintained upstream — see [the original README](https://github.com/ip-please/ip-please.github.io#mods) — instead of being copied here and left half-updated in two places.
 
 ## Files
 
@@ -75,8 +86,10 @@ If you have a new gameplay idea, you're very welcome to fork the game and publis
 | `screens.js` | Intro, newspaper, end-of-day summary, credits, save |
 | `i18n.js` | Language switching `T()` and the language-select screen |
 | `en.js` | English translations (keyed by the original Chinese), Translator's Notes, slang glosses |
-| `data.js` | The script: each day's travelers, newspapers, random passers-by |
-| `docs.js` | Documents: passport, device card, account card, Constitution |
+| `data.js` | The script: each day's queue (DAY_SCRIPT), travelers and flaw types, newspapers |
+| `endings.js` | The endings table and the cross-playthrough ending file |
+| `mod.js` | This fork's name and storage keys |
+| `docs.js` | Documents: passport, device card, account card, entry record, transfer order, Constitution |
 | `gfx.js` / `sfx.js` | Pixel drawing / sound synthesis (all generated live, no audio files) |
 | `assets.js` | Pre-rendered characters, backgrounds and glyph atlas (generated by `tools/build_assets.py`; don't edit by hand) |
 | `tools/` | Asset tools: `pp/` draws the characters and scenes, `assets/fonts/` holds the pixel fonts; `check_en.js` finds missing translations |
@@ -97,11 +110,16 @@ If you change a Chinese line, update the matching key in `en.js` too (it must ma
 node tools/check_en.js
 ```
 
+To add a character: define them with `Person(...)` in `tools/pp/cast.py` (skin, face, hair and top are existing parts), register a key in the SCRIPTED table in `tools/build_assets.py`, then rerun the build. Portraits and ID photos come out together — that is how Opus and the auditor got drawn.
+
+Dates need no bookkeeping: day 1 is 2026.10.19, a Monday, and every later day follows from it. Day 4 lands on a Thursday, which is what makes the Crazy Thursday bit work, so check that day before moving the start date.
+
 Local preview: run `python -m http.server` in the repo root and open <http://localhost:8000>.
 
 ## Credits and license
 
+- This fork builds on [IP, PLEASE by ctnyanya](https://github.com/ip-please/ip-please.github.io) (MIT). Days 7–9, articles §7 and §8, the new endings and all week-two text are by [KujouShiori](https://github.com/KujouShiori); the original six days are unchanged.
 - A tribute to Lucas Pope's *Papers, Please*. This is a fan-made satire and every character is fictional. It mocks region-based blocking and the absurd disguises around it, not any ethnicity or group. Article 12 of the Constitution: judge the region, not the face.
-- All art, music and sound effects are generated by code written with Claude Code.
+- All art, music and sound effects are generated by code written with Claude Code, including the portraits, glyphs and documents week two adds.
 - Code released under the [MIT](LICENSE) license.
 - Pixel font: [Fusion Pixel Font](https://github.com/TakWolf/fusion-pixel-font), SIL Open Font License 1.1 (see `OFL-fusion-pixel.txt`).

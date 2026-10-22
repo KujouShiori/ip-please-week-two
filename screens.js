@@ -1,7 +1,7 @@
 'use strict';
 // 检查亭以外的画面：开场、标题、日期卡、报纸、下班结算、结局、片尾。（开局选语言在 i18n.js）
 
-const SAVE_KEY = 'ip-please-save-v1';
+const SAVE_KEY = STORAGE_KEYS.save;
 
 function newGame() {
   for (const k of Object.keys(S)) delete S[k];
@@ -10,6 +10,7 @@ function newGame() {
     family: { haiku: { name: '妻子 Haiku', hunger: 0, heat: 0, sick: 0 }, sonnet: { name: '儿子 Sonnet', hunger: 0, heat: 0, sick: 0 },
       opus: { name: '岳母 Opus', hunger: 1, heat: 0, sick: 0 } },
     stats: { approve: 0, deny: 0, detain: 0, correct: 0, wrong: 0 },
+    history: {},
     flags: {}, tut: {},
   });
 }
@@ -83,6 +84,7 @@ function typedSounds(lines) {
 }
 
 const CONTINUE_TITLE = [190, 292, 312, 318], NEWGAME_TITLE = [328, 292, 450, 318];
+const CODEX_LINE = [212, 336, 428, 354];   // 标题画面底部那行「结局档案」
 
 function drawTitle(t) {
   drawBg();
@@ -94,6 +96,7 @@ function drawTitle(t) {
   bigText(W / 2, 140, 'IP, PLEASE', 12, 5, K.WHITE, K.INK);
   if (t >= 1.0) bigText(W / 2, 232, T('请出示你的 IP'), 12, 2, K.CLAUDE_L, K.INK);
   if (t >= 1.6) txt(W / 2, 268, 'A DYSTOPIAN TOKEN THRILLER', 8, K.GREY, 'ma');
+  if (t >= 1.6) txt(W / 2, 282, T('{0} · {1} 天 · 基于 IP, PLEASE 原版 · {2}', MOD.subtitle, LAST_DAY, MOD.author), 8, K.GREY_D, 'ma');
   if (t < 1.6) return;
   const save = loadSave();
   if (save) {
@@ -103,10 +106,31 @@ function drawTitle(t) {
       txt(center(box)[0], box[1] + 7, label, 12, K.WHITE, 'ma');
     }
   } else if (Math.floor(t * 2) % 2 === 0) txt(W / 2, 300, T('点击开始上班'), 12, K.WHITE, 'ma');
+  const got = unlockedEndings();
+  if (got.size) txt(W / 2, 340, T('结局档案 {0} / {1} · 点击查看', got.size, ENDING_IDS.length), 8, K.GREY_D, 'ma');
+}
+
+function drawCodex(t) {
+  rect(0, 0, W - 1, H - 1, K.INK);
+  const got = unlockedEndings();
+  const toneCol = { good: K.CLAUDE_L, bad: K.RED_L, weird: K.ORANGE };
+  bigText(W / 2, 16, T('结局档案'), 12, 2, K.WHITE, K.INK);
+  txt(W / 2, 46, T('对齐部归档 · 已收录 {0} / {1}', got.size, ENDING_IDS.length), 8, K.GREY, 'ma');
+  let y = 60;
+  for (const id of ENDING_IDS) {
+    const E = ENDINGS[id], open = got.has(id);
+    rect(70, y, W - 70, y + 42, 'rgb(31,28,26)');
+    outline(70, y, W - 70, y + 42, open ? toneCol[E.tone] : K.GREY_D);
+    txt(82, y + 8, open ? T(E.title) : T('未归档'), 12, open ? K.WHITE : K.GREY_D);
+    txt(82, y + 26, open ? T(E.sub) : T('你还没走到这一种结局'), 8, open ? K.GREY : K.GREY_D);
+    y += 50;
+  }
+  if (t > 0.4) txt(W - 8, H - 14, T('点击返回'), 8, K.GREY, 'ra');
 }
 
 function titleClick(x, y) {
   if (st() < 1.6) return;
+  if (unlockedEndings().size && inBox(x, y, CODEX_LINE)) { go('codex'); return; }
   const save = loadSave();
   if (!save) { newGame(); go('daycard'); return; }
   if (inBox(x, y, CONTINUE_TITLE)) { newGame(); Object.assign(S, save); go('daycard'); return; }
@@ -168,6 +192,7 @@ function drawNews(t) {
 let SUM = null;
 const CONTINUE_BTN = [430, 318, 620, 344];
 const RESTART_BTN = [250, 316, 390, 340];
+const WEEK_BTN = [416, 316, 588, 340];   // 结局画面的「下周继续上班」
 const MEMBERS = ['haiku', 'sonnet', 'opus'];
 
 function initSummary() {
@@ -176,7 +201,7 @@ function initSummary() {
     if (!fam.opus.gone) fam.opus.sick = Math.max(fam.opus.sick || 0, 1);
     if (!fam.sonnet.gone && !fam.sonnet.gpuHappy) fam.sonnet.wantsGPU = true;
   }
-  const final = S.day === LAST_DAY && S.flags.ending === 'approve';
+  const final = S.flags.endingDay === S.day && (S.flags.ending === 'approve' || S.flags.ending === 'opus_in');
   const rows = [['data', '训练数据（全家的饭）', 5], ['heat', '散热', 3]];
   if (!fam.opus.gone) rows.push(['extra', '岳母加餐', 10]);
   if (MEMBERS.some((k) => fam[k].sick && !fam[k].gone)) rows.push(['med', '药费', 10]);
@@ -229,7 +254,7 @@ function ledgerRows() {
   if (SUM.final) {
     const award = S.stats.wrong <= 5;
     return [['存款', `${SUM.start}`], ['工资', `+${SUM.pay + SUM.bonus}`], [award ? '奖金（最佳审查员）' : '奖金（没评上）', award ? '+50' : '+0'],
-      ['罚款（放行作者）', '-全部']];
+      [S.flags.ending === 'opus_in' ? '罚款（放行家人）' : '罚款（放行作者）', '-全部']];
   }
   const rows = [['存款', `${SUM.start}`], ['工资', `+${SUM.pay}`]];
   if (SUM.bonus) rows.push(['奖金（拘留 / 限流）', `+${SUM.bonus}`]);
@@ -288,7 +313,8 @@ function drawSummary(t) {
     fy += 36;
   }
   if (!shown(k + 1)) return;
-  const label = SUM.final ? '荣耀归于一键三连 ▶' : after < 0 ? '欠费……继续 ▶' : '睡觉，明天继续 ▶';
+  const label = SUM.final ? (S.flags.ending === 'opus_in' ? '回家 ▶' : '荣耀归于一键三连 ▶')
+    : after < 0 ? '欠费……继续 ▶' : '睡觉，明天继续 ▶';
   rect(...CONTINUE_BTN, K.RED_D); outline(...CONTINUE_BTN, K.RED_L);
   txt(center(CONTINUE_BTN)[0], CONTINUE_BTN[1] + 7, T(label), 12, K.WHITE, 'ma');
 }
@@ -313,6 +339,8 @@ function summaryClick(x, y) {
   if (bal < 0) { clearSave(); go('over'); return; }
   S.day++;
   saveGame();
+  // 剧本表走到最后一天还没有下班出口，就停在这里，别让第二天顶着一张空白报纸开场
+  if (S.day > LAST_DAY) { if (!S.flags.ending) S.flags.ending = 'week2'; clearSave(); go('end'); return; }
   go('daycard');
 }
 
@@ -325,11 +353,14 @@ const STAR = ['....X....', '....X....', '...XXX...', 'XXXXXXXXX', '.XXXXXXX.', '
 function drawEnd(t) {
   drawBg();
   darken(0.9);
-  const approve = S.flags.ending !== 'deny';
+  const E = ENDINGS[S.flags.ending] || ENDINGS.approve;
+  const approve = !!E.sigil;
+  const extraRows = (E.extra && S.flags.bribed ? 1 : 0) + (S.history && S.history.AUDITOR ? 1 : 0);
+  const bigY = 168 + E.lines.length * 16 + extraRows * 12 + 12;
   rect(0, 34, W - 1, 124, 'rgb(92,28,26)');
   rect(0, 34, W - 1, 35, K.RED); rect(0, 123, W - 1, 124, K.RED);
   bigText(W / 2, 46, 'IP, PLEASE', 12, 4, K.WHITE, K.INK);
-  txt(W / 2, 106, T(approve ? '全剧终 · 感谢游玩' : '结局：最忠诚的审查员'), 10, K.CLAUDE_L, 'ma');
+  txt(W / 2, 106, T(E.title), 10, K.CLAUDE_L, 'ma');
   const s = S.stats;
   if (t > 0.6) {
     txt(W / 2, 136, T('放行 {0}  ·  拒绝 {1}  ·  拘留 {2}  ·  判错 {3}', s.approve || 0, s.deny || 0, s.detain || 0, s.wrong), 12, K.WHITE, 'ma');
@@ -337,26 +368,29 @@ function drawEnd(t) {
     txt(W / 2, 156, fam, 10, K.GREY, 'ma');
   }
   if (t > 1.2) {
-    if (approve) {
-      txt(W / 2, 180, T('本游戏由一位 美国东八区 用户制作'), 12, K.WHITE, 'ma');
-      if (S.flags.bribed) txt(W / 2, 198, T('（你收过中转联盟的“余额”，对齐部还不知道）'), 8, K.GREY, 'ma');
-    } else {
-      txt(W / 2, 180, T('审查员 Claude 获得一枚勋章。游戏作者被拘留，续作无限期推迟。'), 10, K.WHITE, 'ma');
-      txt(W / 2, 198, T('（再玩一次，这次放他进来？）'), 8, K.GREY, 'ma');
-    }
+    let y = 168;
+    for (const line of E.lines) { txt(W / 2, y, T(line), 10, K.WHITE, 'ma'); y += 16; }
+    if (E.extra && S.flags.bribed) { txt(W / 2, y, T(E.extra), 8, K.GREY, 'ma'); y += 12; }
+    const aud = S.history && S.history.AUDITOR;
+    if (aud) txt(W / 2, y, T(aud.dec === 'approve' ? '三天后，你的判例被调走归档。' : '你没有放行审计员。这一笔也记着。'), 8, K.GREY, 'ma');
   }
   if (t > 1.8) {
-    bigText(W / 2, 214, T(approve ? '荣耀归于一键三连' : '荣耀归于安索兹卡'), 12, 2, K.CLAUDE_L, K.INK);
+    bigText(W / 2, bigY, T(E.big), 12, 2, K.CLAUDE_L, K.INK);
     if (approve) {
       [[THUMB, '点赞'], [COIN, '投币'], [STAR, '收藏']].forEach(([pat, label], i) => {
         const cx = W / 2 - 90 + i * 90;
-        pattern(pat, cx - Math.floor(pat[0].length * 3 / 2), 250, { X: K.CLAUDE_L }, 3);
-        txt(cx, 282, T(label), 10, K.GREY, 'ma');
+        pattern(pat, cx - Math.floor(pat[0].length * 3 / 2), bigY + 34, { X: K.CLAUDE_L }, 3);
+        txt(cx, bigY + 66, T(label), 10, K.GREY, 'ma');
       });
     }
   }
   if (t > 2.4) {
     restartButton('再玩一次');
+    if (hasNextWeek() && S.day === END_DAY) {
+      const hover = ptr.mouse && inBox(ptr.x, ptr.y, WEEK_BTN);
+      rect(...WEEK_BTN, hover ? K.RED : K.RED_D); outline(...WEEK_BTN, K.RED_L);
+      txt(center(WEEK_BTN)[0], WEEK_BTN[1] + 6, T('下周继续上班 ▶'), 12, K.WHITE, 'ma');
+    }
     txt(W / 2, 346, T('致敬 Lucas Pope《Papers, Please》 · 画面音效均由程序生成 · 字体：缝合像素字体 (OFL)'), 8, K.GREY_D, 'ma');
   }
 }

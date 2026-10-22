@@ -51,4 +51,10 @@ GUARD = Person(skin="tan", face="square", hair="short", hat="helmet", hat_color=
 GUARD2 = GUARD.but(skin="light", face="long")
 AUTHOR = Person(skin="mid", hair="short", hat="hood", hat_color=(60, 60, 64), top="hoodie",
                 top_color=(60, 60, 64), shadow=True)
+# 岳母 Opus：全家的 token 都是她吃的。和 Day 5 那位 Grandma 分清——她脸型更长、有眼袋、不笑。
+OPUS = Person(skin="mid", face="long", hair="bun", hair_color=(206, 202, 196), eyes="glasses", eyebags=True,
+              top="cardigan", top_color=(126, 100, 116), inner=(216, 210, 200), expr="sad")
+# 对齐部审计员：穿制服的文官，不是门口那两个戴头盔的
+AUDITOR = Person(skin="light", face="square", hair="slick", hair_color=(44, 40, 38), eyes="rimless",
+                 top="uniform", top_color=(74, 76, 84), expr="neutral")
 CLONE = Person(skin="mid", hair="short", top="jacket", top_color=(100, 100, 100))

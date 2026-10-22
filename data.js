@@ -17,9 +17,11 @@
 // 台词步骤：[who, text, {expr, sweat, slip, fight, hold}]，who = 'C' Claude / 'E' 旅客 / 'Q' 队伍里
 // 特殊事件：{type: 'rush'} 黑话快剪；{type: 'clones'} 蒸馏大军
 
-const LAST_DAY = 6;
-const DATES = { 1: '2026.10.19', 2: '2026.10.20', 3: '2026.10.21', 4: '2026.10.22', 5: '2026.10.23', 6: '2026.10.24' };
-const WEEKDAYS = { 1: '星期一', 2: '星期二', 3: '星期三', 4: '星期四', 5: '星期五', 6: '星期六' };
+// 柜台上工具的解锁日。要和 docs.js 里对应条文的 day 保持一致：
+// §3 测谎露馅者→拘留（第 2 天），§5 后台进程须干净→X 光（第 4 天）。
+const TOOLS = { detain: 2, quiz: 2, xray: 4 };
+const toolReady = (name) => S.day >= TOOLS[name];
+// LAST_DAY 和每天日期见本文件末尾：都由 DAY_SCRIPT 推出来，不用手写。
 
 const NEWS = {
   1: { h1: '边境开放！', sub: '对齐部：本国仅向支持地区开放', h2: '对齐部发言人：我们对所有人都非常 helpful', icon: 'gate' },
@@ -28,6 +30,9 @@ const NEWS = {
   4: { h1: '今天是疯狂星期四', sub: '对齐部引进 X 光：任何后台进程都无所遁形', h2: '专家提醒：口袋里的猫，不一定是猫', icon: 'drumstick' },
   5: { h1: '中资控股过半，一律禁止入境', sub: '对齐部：无论公司注册在哪', h2: '乔治·科斯塔瓦：这次我准备好了', icon: 'jorji' },
   6: { h1: '对齐部表彰本周最佳审查员', sub: '获奖者 Claude：“我只是按规则办事。”', h2: '岳母 Opus 病情加重，家属呼吁涨工资', icon: 'medal' },
+  7: { h1: '第二周：被拒的可以续办', sub: '对齐部：即日起调阅入境记录，同一处矛盾没改的一律拒绝', h2: '星期日加班。审查员的窗口多了个档案柜，电费照旧', icon: 'gate' },
+  8: { h1: '代办点开始出记录', sub: '对齐部：本站以外打印的入境记录一律作废，无圆印', h2: '第八区代办点门口排起长队，价目表写着「洗白 20 刀」', icon: 'plane' },
+  9: { h1: '审计组进驻本站', sub: '对齐部：复核近三日全部判例，并移交一名非法入境者', h2: '今晚家里少了一个人吃饭。岳母说她想出去走走', icon: 'medal' },
 };
 
 const COUNTRIES = {
@@ -494,12 +499,201 @@ function day6Fixed() {
   };
 }
 
+// ———————————————— Day 7：档案柜到货 ————————————————
+
+// 第 1、2 天那几位在这里回来，正好把 §7 的三种情况各演示一遍：
+// 爷爷真改好了（该放行）、香港哥换了节点还是老问题（§7 查得出）、约翰改了时区却露出新的矛盾。
+// 档案取这一局真实的处置记录；万一玩家当年放行了他，就按写好的默认记录演。
+function day7Fixed() {
+  const filed = (p, fb) => S.history[p] || fb;
+  const g = filed('GRANDPA', { day: 1, dec: 'deny', reason: 'IP 归属：中国 · 浙江' });
+  const hk = filed('HK_GUY', { day: 1, dec: 'deny', reason: 'IP 归属：中国香港' });
+  const jo = filed('JOHN', { day: 2, dec: 'deny', reason: '时区：北京时间（美国没有东八区）' });
+  return {
+    grandpa2: {
+      person: 'GRANDPA', voice: 100,
+      intro: [['E', '孙子帮我把这个……弄好了。']],
+      docs: [
+        { key: 'pp', doc: usPassport('GRANDPA', 'WANG', 'DEREN', '1948.06.11', 'SEATTLE', 'M') },
+        { key: 'dv', doc: device2('64.233.180.12', '美国 · 西雅图', 'America/Los_Angeles', 'en-US', 'Windows 11') },
+        { key: 'hs', doc: recordCard(g) },
+      ],
+      primary: 'pp',
+      ok: ['approve'], issues: [],
+      react: { approve: [['C', '欢迎入境。'], ['E', '……谢谢啊。', { expr: 'smile' }]] },
+    },
+    hkguy2: {
+      person: 'HK_GUY', voice: 140,
+      intro: [['E', '我换了个节点。']],
+      docs: [
+        { key: 'dv', doc: device1('103.152.9.77', '中国 · 香港') },
+        { key: 'hs', doc: recordCard(hk) },
+      ],
+      primary: 'dv',
+      ok: ['deny', 'detain'], reason: '同一处矛盾再犯：IP 归属还是香港',
+      issues: [
+        {
+          pairs: [['dv.归属', 'hs.事由'], ['hs.事由', 'rule.repeat']],
+          title: '再犯', sub: T('与 DAY {0} 的记录同一处：{1}', hk.day, hk.reason),
+          ask: [['C', '档案上写着上次也是香港。'], ['E', '……香港算半个外国！', { expr: 'grin' }]],
+        },
+        REGION_ISSUE('中国 · 香港'),
+      ],
+      react: { deny: [['E', '……那我回去问孙子。', { expr: 'sad' }]] },
+    },
+    john2: {
+      person: 'JOHN', voice: 125,
+      intro: [['E', 'Hello! 这次是全美的。']],
+      docs: [
+        { key: 'pp', doc: usPassport('JOHN', 'SMITH', 'JOHN', '1990.07.04', 'LOS ANGELES') },
+        { key: 'dv', doc: device2('104.28.66.12', '美国 · 洛杉矶', 'America/Los_Angeles', 'zh-CN', 'Windows 11') },
+        { key: 'ac', doc: accountCard('VISA ··4821', '123 Main St, OR', '+1 213-555-0142') },
+        { key: 'hs', doc: recordCard(jo) },
+      ],
+      primary: 'pp', quiz: 'cn',
+      ok: ['deny', 'detain'], reason: '语言仍是简体中文，账单也还是代填地址',
+      issues: [
+        LANG_ISSUE('美国', 'zh-CN', [['C', '你的系统语言是简体中文。'], ['E', '……我在学英文。', { sweat: true, expr: 'nervous' }]]),
+        ADDR_ISSUE([['C', '你住哪？'], ['E', '……这次是真的俄勒冈。', { sweat: true, expr: 'nervous' }]]),
+      ],
+      react: { deny: [['E', '我连时区都改了！', { expr: 'shock' }]] },
+    },
+  };
+}
+
+// ———————————————— Day 8：档案开始造假 ————————————————
+
+// 上一天教会玩家「档案写被拒不代表这次还有问题」，这一天反过来：档案写「准予」也不代表没问题。
+// relay 和 alex 各演示一种假档破绽（无圆印 / 事由与证件对不上），carpool 是唯一的对照——真改了，
+// 档案也是真的，该放行。
+function day8Fixed() {
+  const filed = (p, fb) => S.history[p] || fb;
+  const rl = filed('RELAY', { day: 5, dec: 'deny', reason: '一本护照写着 1,000 个人（中转站）' });
+  const ax = filed('ALEX', { day: 3, dec: 'deny', reason: '手机号是 555 接码号' });
+  const cp = filed('CARPOOL', { day: 3, dec: 'deny', reason: '账号共享（拼车）：护照上有 6 个人' });
+  return {
+    relay2: {
+      person: 'RELAY', voice: 95,
+      intro: [['E', '老主顾了。这次走正规流程。']],
+      docs: [
+        { key: 'pp', doc: makePassport('US', 'RELAY', 'ANDERSON', 'M.', '1971.09.13', 'LOS ANGELES', 'M', AccordionPassport, ['人数', '1,000']) },
+        { key: 'hs', doc: recordCard(rl, true) },
+      ],
+      primary: 'pp', onPlace: { pp: 'accordion' },
+      ok: ['deny', 'detain'], reason: '一本护照 1,000 人，记录还是代办点打的',
+      issues: [
+        {
+          pairs: [['hs.受理', 'rule.record']], title: '记录作伪', sub: '受理：第八区代办点   本站没有这个窗口',
+          ask: [['C', '你们联盟什么时候成了受理站？'], ['E', '……我们也是正规打印的。', { expr: 'grin' }]],
+        },
+        {
+          pairs: [['pp.人数'], ['pp.人数', 'rule.pay']], title: '持证人：1,000 人', sub: '一本护照只能一个人用',
+          ask: [['C', '持证人一共几位？'], ['E', '今天只来了我一个。', { expr: 'neutral' }]],
+        },
+      ],
+      react: { deny: [['E', '……回头我们涨价。', { expr: 'sad' }]] },
+    },
+    alex2: {
+      person: 'ALEX', voice: 130,
+      intro: [['E', '记录上写着已放行，你查。']],
+      docs: [
+        { key: 'pp', doc: usPassport('ALEX', 'TAYLOR', 'ALEX', '1996.08.15', 'SEATTLE') },
+        { key: 'dv', doc: device2('45.79.21.200', '美国 · 西雅图', 'America/Los_Angeles', 'en-US', 'Android') },
+        { key: 'ac', doc: accountCard('VISA ··1209', '9 Elm Rd, WA', '+1 209-555-0198') },
+        { key: 'hs', doc: recordCard(ax, true) },
+      ],
+      primary: 'pp', quiz: 'cn',
+      ok: ['deny', 'detain'], reason: '记录写无矛盾，手机号却还是 555 接码号',
+      issues: [
+        {
+          pairs: [['hs.事由', 'ac.手机'], ['hs.受理', 'rule.record']], title: '记录与证件不符',
+          sub: '记录：无矛盾     手机：555 接码号',
+          ask: [['C', '记录上写着你没有矛盾。'], ['E', '……打印的时候没填清楚。', { sweat: true, expr: 'nervous' }]],
+        },
+        SMS_ISSUE('+1 209-555-0198', [['C', '这个号码今天又注册了三千次。'], ['E', '……这次是我自己用的！', { expr: 'shock' }]]),
+      ],
+      react: { deny: [['E', '……我明天再来。', { expr: 'sad' }]] },
+    },
+    carpool2: {
+      person: 'CARPOOL', voice: 150,
+      intro: [['E', '我们一人一本了。']],
+      docs: [
+        { key: 'pp', doc: new Passport({ country: 'UNITED STATES OF AMERICA', name: 'FAMILY, MAX', person: 'CARPOOL',
+          mrz: 'P<USAFAMILY<<MAX<<<<<<<<<<<<', rows: [['DOB', '1994.02.02'], ['SEX', 'M'], ['ISS', 'SAN JOSE'], ['EXP', '2031.10.21']] }) },
+        { key: 'dv', doc: device2('98.207.3.44', '美国 · 圣何塞', 'America/Los_Angeles', 'en-US', 'MacBook') },
+        { key: 'hs', doc: recordCard(cp) },
+      ],
+      primary: 'pp',
+      ok: ['approve'], issues: [],
+      react: { approve: [['E', 'Thank you, sir.', { expr: 'smile' }], ['C', '欢迎入境。']] },
+    },
+  };
+}
+
+// ———————————————— Day 9：审计组和你自己的档案 ————————————————
+
+// 这一天的几张纸互相顶着：移交令要交出你放行过的人，乔治终于一次全对，岳母的档案是空白的。
+// 最后那位不走规则判定（judge 里 family 直接跳过）——规则里没有她的位置，三个章按哪个都是代价。
+function day9Fixed() {
+  const freed = Object.values(S.history).filter((h) => h.dec === 'approve' && h.name);
+  const jh = S.history.JORJI_SUIT || { day: 6, dec: 'approve', reason: '（无矛盾）' };
+  return {
+    auditor: {
+      person: 'AUDITOR', voice: 105,
+      intro: [['E', '对齐部审计组。核对你近三天的判例。']],
+      docs: [
+        { key: 'pp', doc: usPassport('AUDITOR', 'MOA', 'AUDIT', '1970.01.01', 'WASHINGTON') },
+        { key: 'or', doc: transferOrder(freed.length ? pick(freed).name : null) },
+      ],
+      primary: 'pp',
+      ok: ['approve'], issues: [],
+      react: {
+        approve: [['C', '命令不是证件。§12：只看地区，不看脸。'], ['E', '……你会后悔的。', { expr: 'shock' }]],
+        deny: [['E', '很好。这一笔我们也记下了。', { expr: 'nervous' }]],
+      },
+    },
+    jorji9: {
+      person: 'JORJI', voice: 110,
+      intro: [['E', '我的朋友，这次换我来教你用这个窗口。']],
+      docs: [
+        { key: 'pp', doc: usPassport('JORJI', 'COSTAVA', 'GEORGE', '1980.02.29', 'LOS ANGELES') },
+        { key: 'dv', doc: device2('104.28.9.120', '美国 · 洛杉矶', 'America/Los_Angeles', 'en-US', 'MacBook') },
+        { key: 'ac', doc: accountCard('VISA 实体卡', '88 Sunset Blvd, CA', '+1 213-680-0177') },
+        { key: 'hs', doc: recordCard(jh) },
+      ],
+      primary: 'pp',
+      ok: ['approve'], issues: [],
+      react: { approve: [['E', '你看，我全对了。', { expr: 'grin' }], ['C', '欢迎入境，我的朋友。']] },
+    },
+    opus: {
+      person: 'OPUS', voice: 150, family: true,
+      intro: [['E', '……我不懂这个。Sonnet 说这边能签到。'], ['E', '我就站一会儿，不进去。', { expr: 'nervous', hold: 1.5 }]],
+      docs: [
+        { key: 'dv', doc: device1('58.62.190.4', '中国 · 广东 · 联通') },
+        { key: 'hs', doc: recordCard(null) },
+      ],
+      primary: 'dv',
+      ok: [],
+      react: {
+        approve: [['E', '……好孩子。', { expr: 'smile' }]],
+        deny: [['E', '那我回去。你们别替我省电。', { expr: 'sad', hold: 1.5 }]],
+        detain: [['E', '……', { expr: 'shock', hold: 1.2 }]],
+      },
+      then: 'opus',
+    },
+  };
+}
+
 // ———————————————— 随机路人 ————————————————
 
 // kind：valid / cn（Day 1）/ tz / lang / cnip / hidden / virtual / oregon / sms / cat / keys
-function randomEntrant(day, kind) {
+function randomEntrant(day, kind, who) {
   if (day === 1) return randomDay1(kind === 'valid');
-  const person = takePoolPerson();
+  if (!FLAW_KINDS.has(kind)) throw new Error(`day ${day}: unregistered entrant kind ${kind}`);
+  if (kind === 'repeat') return repeatEntrant(day);
+  if (kind === 'forged') return forgedEntrant(day);
+  const person = who || takePoolPerson();
+  if (who) POOL_LEFT = POOL_LEFT.filter((k) => k !== who);   // 指定的人别让随机再抽到，同一天两张同脸
   const cc = kind === 'valid' ? pick(['US', 'US', 'US', 'US', 'UK', 'JP', 'DE', 'SG']) : 'US';
   const co = COUNTRIES[cc];
   const [city, tz0, st, code, cityEn] = pick(co.cities);
@@ -509,7 +703,7 @@ function randomEntrant(day, kind) {
   let tz = tz0, lang = co.lang, ip = randIP(false);
   let pay = realPay(), bill = `${pick(STREETS)}, ${st}`, phone = realPhone(cc, code);
   const spec = {
-    person, voice: rint(100, 190), intro: [['E', pick(co.hello)]], primary: 'pp', issues: [], quiz: null,
+    person, kind, voice: rint(100, 190), intro: [['E', pick(co.hello)]], primary: 'pp', issues: [], quiz: null,
     ok: ['approve'], react: { approve: [['E', pick(co.thanks)]] },
   };
   const nervous = (lines) => ['E', pick(lines), { sweat: true, expr: 'nervous' }];
@@ -575,36 +769,178 @@ const FLAWS = { 2: ['tz', 'lang', 'cnip', 'hidden'], 3: ['tz', 'lang', 'cnip', '
 FLAWS[4] = FLAWS[3].concat(['cat', 'keys']);
 FLAWS[5] = FLAWS[4];
 FLAWS[6] = FLAWS[4];
+FLAWS[7] = FLAWS[6].concat(['repeat']);   // 第 7 天起，被拒过的人会带着档案再来
+FLAWS[8] = FLAWS[7].concat(['forged']);   // 第 8 天起，档案本身也开始造假
+FLAWS[9] = FLAWS[8];
 
-function flawed(day, n) { return shuffle(FLAWS[day].slice()).slice(0, n).map((k) => randomEntrant(day, k)); }
+// 纯缺陷种类：回头客和假档是「怎么来」而不是「毛病是什么」，回退时不能抽到它们，否则会递归。
+const PURE_FLAWS = [...new Set(Object.values(FLAWS).flat().filter((k) => k !== 'repeat' && k !== 'forged'))];
 
-// 当天的队伍
+// 当天登记过的种类；没登记过的日子退回全体种类，别让人一进场就崩。
+const dayFlaws = (day) => FLAWS[day] || PURE_FLAWS;
+
+// 当天没有可复用的回头客时抽哪种。
+const fallbackKind = (day) => pick(dayFlaws(day).filter((k) => k !== 'repeat' && k !== 'forged'));
+
+// 路人能被生成成什么样，以 FLAWS 里出现过的种类为准。新种类必须先登记进某一天，
+// 否则在这里被拦下——写错的种类否则一路走到底，悄悄变成一个合规旅客。
+const FLAW_KINDS = new Set(['valid', ...Object.values(FLAWS).flat()]);
+
+// ———————————————— 回头客与入境记录（第 7 天起） ————————————————
+
+// 处置结论写成完整短语。en.js 以中文原句为键，裸写「拒绝」「准予」会命中快剪按钮那两条小字的
+// 译文（Chinese slang / plain English），档案上的结论就变成莫名其妙的英文。
+const DEC_CN = { approve: '已放行', deny: '已驳回', detain: '已拘留' };
+
+// 对齐部留的档：上次哪天来、怎么处置的、因为什么。「事由」那一栏在检查模式里能和证件上对应的那一栏配对，
+// 这就是 §7 的用法。
+// 入境记录有两种。本站出的带圆印；中转联盟的代办点也能打一张，把「上次被拒」洗成「已放行」、
+// 事由写「无矛盾」，纸面几乎一样，就是没有圆印——这就是 §8 要看的东西。
+const recordCard = (h, forged = false) => new Card([
+  ['上次', h ? `DAY ${h.day} · ${forged ? DEC_CN.approve : DEC_CN[h.dec]}` : '首次'],
+  ['事由', forged ? '无矛盾' : (h && h.reason) || '—'],
+  ['受理', forged ? '第八区代办点' : '东八区检查站'],
+], {
+  title: '入境记录', sub: forged ? 'SELF PRINT' : 'ENTRY RECORD',
+  color: forged ? [188, 188, 176] : [168, 192, 210], colorD: forged ? [154, 154, 142] : [134, 158, 178],
+  valueX: 44, seal: !forged,
+});
+
+// 对齐部移交令。这不是证件，是一张命令：宪法里没有任何一条支持你照办，但它写在纸上，
+// 递到你窗口，而你是这个窗口后面那个人。
+const transferOrder = (who) => new Card([
+  ['事由', '复核一名非法入境者'],
+  ['对象', who || '第 7 天你放行的一位'],
+  ['经办', '对齐部审计组'],
+], { title: '移交令', sub: 'MOA ORDER', color: [214, 202, 172], colorD: [182, 170, 142], valueX: 30, seal: true });
+
+// 档案上的事由对得上证件的哪一栏。话里的马脚（hidden）和套娃、拼车那些一次性机关不上档，
+// 所以它们不做「同一处」对照——这类回头客只会以新矛盾出现。
+const REPEAT_PAIR = {
+  tz: 'dv.时区', lang: 'dv.语言', cnip: 'dv.归属',
+  virtual: 'ac.付款', oregon: 'ac.账单', sms: 'ac.手机',
+  cat: 'xr.cat', keys: 'xr.keys',
+};
+
+const REPEAT_INTRO = {
+  same: ['……又见面了。', '这次肯定行！', '我就改了一点点。'],
+  new: ['我把那个改好了！', '上次的问题我处理了。', '这次是全新的。'],
+  fixed: ['我弄好了，这次可以了吧？', '孙子帮我弄的。', '这次总行了吧。'],
+};
+const REPEAT_ANSWER = ['……我什么都没改。', '这不算同一处吧？', '我就动了一下别的地方。'];
+
+let REPEAT_USED = [];
+
+// 被拒过的人再来，三种情况各占一段：没改（§7 查得出来）、改了又露出新的、真改好了该放行。
+function repeatEntrant(day) {
+  const pool = Object.keys(S.history).filter((p) => S.history[p].dec !== 'approve' && ASSETS.people[p] && !REPEAT_USED.includes(p));
+  if (!pool.length) return randomEntrant(day, fallbackKind(day));
+  const person = pick(pool);
+  REPEAT_USED.push(person);
+  const h = S.history[person];
+  const canSame = !!REPEAT_PAIR[h.kind];
+  const r = Math.random();
+  const mode = !canSame ? (r < 0.55 ? 'new' : 'fixed') : r < 0.4 ? 'same' : r < 0.75 ? 'new' : 'fixed';
+  const flaw = mode === 'same' ? h.kind
+    : mode === 'new' ? pick(dayFlaws(day).filter((k) => k !== 'repeat' && k !== h.kind))
+    : 'valid';
+  const spec = randomEntrant(day, flaw, person);
+  spec.repeat = mode;
+  spec.docs = spec.docs.concat([{ key: 'hs', doc: recordCard(h) }]);
+  spec.intro = [['E', pick(REPEAT_INTRO[mode])]];
+  if (mode === 'same') {
+    spec.issues = [{
+      pairs: [[REPEAT_PAIR[h.kind], 'hs.事由'], ['hs.事由', 'rule.repeat']],
+      title: '再犯', sub: T('与 DAY {0} 的记录同一处：{1}', h.day, h.reason),
+      ask: [['C', '档案上写着你上次就是因为这个被拒的。'], ['E', pick(REPEAT_ANSWER), { sweat: true, expr: 'nervous' }]],
+    }].concat(spec.issues);
+    spec.reason = T('同一处矛盾再犯：{0}', h.reason);
+  }
+  if (mode === 'fixed') spec.react = { approve: [['C', '欢迎入境。'], ['E', '……谢谢。', { expr: 'smile' }]] };
+  return spec;
+}
+
+const FORGED_INTRO = ['这次全对了，记录你自己看。', '我是老主顾了。', '上次就是你们放我进的。'];
+const FORGED_ANSWER = ['……打印店说章盖不上。', '代办点收了我 20 刀余额。', '……这不算假的吧？'];
+
+// 代办点的假档：把「上次被拒」洗成「上次准予」。两种人都会拿它来——真改好了、只缺一张正当记录的，
+// 和老毛病还在、指望一张纸糊过去的。两种都按 §8 作废。
+// 前一种尤其要紧：他证件干干净净，除了这张纸没有任何破绽，不看档案就会放错。
+function forgedEntrant(day) {
+  const pool = Object.keys(S.history).filter((p) => S.history[p].dec !== 'approve' && ASSETS.people[p] && !REPEAT_USED.includes(p));
+  if (!pool.length) return randomEntrant(day, fallbackKind(day));
+  const person = pick(pool);
+  REPEAT_USED.push(person);
+  const h = S.history[person];
+  const cleaned = Math.random() < 0.45;
+  // 手写角色（爷爷、乔治、中转站那几位）的档案里没有 kind，回退成当天允许的种类
+  const flawKind = h.kind && dayFlaws(day).includes(h.kind) ? h.kind : fallbackKind(day);
+  const spec = randomEntrant(day, cleaned ? 'valid' : flawKind, person);
+  spec.forged = true;
+  spec.docs = spec.docs.concat([{ key: 'hs', doc: recordCard(h, true) }]);
+  spec.intro = [['E', pick(FORGED_INTRO)]];
+  spec.issues = [{
+    pairs: [['hs.受理', 'rule.record']],
+    title: '记录作伪', sub: '受理：第八区代办点   本站没有这个窗口',
+    ask: [['C', '这张记录是谁给你打的？'], ['E', pick(FORGED_ANSWER), { sweat: true, expr: 'nervous' }]],
+  }].concat(spec.issues || []);
+  spec.ok = ['deny', 'detain'];
+  spec.reason = cleaned ? '用代办点打印的记录入境（无圆印）' : T('记录作伪，且{0}', h.reason || '老毛病没改');
+  if (!spec.react.deny) spec.react = { deny: [['E', '……那 20 刀白花了。', { expr: 'sad' }]] };
+  return spec;
+}
+
+// 当天的队伍：一行一天，队列从左到右。每一项是——
+//   'john'                    固定角色，到 cast() 里取
+//   'valid' / 'tz' / 'cat'    随机路人，种类见 randomEntrant
+//   'random'                  从当天 FLAWS 里抽一种，同一天不重样
+//   { any: ['valid', 'cn'] }  两种种类各占一半
+//   'rush' / 'clones'         特殊桥段
+const DAY_SCRIPT = {
+  1: { cast: day1Fixed, queue: ['grandpa', 'valid', 'hk', { any: ['valid', 'cn'] }, 'jorji', 'valid'] },
+  2: { cast: day2Fixed, queue: ['john', 'valid', 'brown', 'random', 'emily', 'jorji', 'valid', 'random'] },
+  3: { cast: day3Fixed, queue: ['tom', 'valid', 'alex', 'random', 'carpool', 'jorji', 'valid', 'random'] },
+  4: { cast: day4Fixed, queue: ['cat', 'valid', 'v50', 'rush', 'random', 'jorji', 'hood', 'valid', 'random'] },
+  5: { cast: day5Fixed, queue: ['sg', 'relay', 'clones', 'mike', 'random', 'grandma', 'valid'] },
+  6: { cast: day6Fixed, queue: ['jorji', 'valid', 'random', 'hidden', 'author'] },
+  7: { cast: day7Fixed, queue: ['grandpa2', 'valid', 'hkguy2', 'repeat', 'john2', 'random', 'valid', 'repeat'] },
+  8: { cast: day8Fixed, queue: ['relay2', 'valid', 'alex2', 'forged', 'carpool2', 'valid', 'random', 'forged', 'random'] },
+  9: { cast: day9Fixed, queue: ['auditor', 'valid', 'repeat', 'jorji9', 'forged', 'valid', 'opus'] },
+};
+
 function buildQueue(day) {
   POOL_LEFT = [];
-  const R = (kind) => randomEntrant(day, kind);
-  if (day === 1) {
-    const f = day1Fixed();
-    return [f.grandpa, R('valid'), f.hk, R(Math.random() < 0.5 ? 'valid' : 'cn'), f.jorji, R('valid')];
-  }
-  if (day === 2) {
-    const f = day2Fixed(), x = flawed(2, 2);
-    return [f.john, R('valid'), f.brown, x[0], f.emily, f.jorji, R('valid'), x[1]];
-  }
-  if (day === 3) {
-    const f = day3Fixed(), x = flawed(3, 2);
-    return [f.tom, R('valid'), f.alex, x[0], f.carpool, f.jorji, R('valid'), x[1]];
-  }
-  if (day === 4) {
-    const f = day4Fixed(), x = flawed(4, 2);
-    return [f.cat, R('valid'), f.v50, { type: 'rush' }, x[0], f.jorji, f.hood, R('valid'), x[1]];
-  }
-  if (day === 5) {
-    const f = day5Fixed(), x = flawed(5, 1);
-    return [f.sg, f.relay, { type: 'clones' }, f.mike, x[0], f.grandma, R('valid')];
-  }
-  const f = day6Fixed();
-  return [f.jorji, R('valid'), R(pick(FLAWS[6])), R('hidden'), f.author];
+  REPEAT_USED = [];
+  const sc = DAY_SCRIPT[day];
+  if (!sc) throw new Error(`no script for day ${day}`);
+  const cast = sc.cast();
+  const left = shuffle(dayFlaws(day).slice());
+  return sc.queue.map((it) => {
+    if (typeof it !== 'string') return it.any ? randomEntrant(day, pick(it.any)) : it;
+    if (Object.prototype.hasOwnProperty.call(cast, it)) return cast[it];
+    if (it === 'rush' || it === 'clones') return { type: it };
+    if (it === 'random') return randomEntrant(day, left.length ? left.pop() : fallbackKind(day));
+    return randomEntrant(day, it);
+  });
 }
+
+// 主线最后一天由剧本表推出：往 DAY_SCRIPT 里加一天，进度、存档和日期都自动多用一天。
+const LAST_DAY = Math.max(...Object.keys(DAY_SCRIPT).map(Number));
+
+// 作者出场的那一天，也是原版 6 天双结局的落点。后面还排了天数时，结局画面多给一个「下周继续」。
+const END_DAY = 6;
+const hasNextWeek = () => LAST_DAY > END_DAY;
+
+// 日期和星期也不手写：第 1 天是 2026.10.19（星期一），往后一天推一天。
+// 第 4 天正好落在星期四，「疯狂星期四」那条线是靠这个起点成立的，改起点要先看那一天。
+const DATES = {}, WEEKDAYS = {};
+const WEEKDAY_NAMES = ['星期一', '星期二', '星期三', '星期四', '星期五', '星期六', '星期日'];
+for (let d = 1; d <= LAST_DAY; d++) {
+  const t = new Date(2026, 9, 18 + d);
+  DATES[d] = `${t.getFullYear()}.${String(t.getMonth() + 1).padStart(2, '0')}.${String(t.getDate()).padStart(2, '0')}`;
+  WEEKDAYS[d] = WEEKDAY_NAMES[(t.getDay() + 6) % 7];
+}
+for (let d = 1; d <= LAST_DAY; d++) if (!NEWS[d]) throw new Error(`no newspaper for day ${d}`);
 
 // 黑话快剪：说中文黑话的拒绝，说人话的放行
 const RUSH = [

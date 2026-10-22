@@ -2,9 +2,9 @@
 
 **简体中文** · [English](#english)
 
-谢谢你愿意为 IP, PLEASE 花时间。
+谢谢你愿意为 IP, PLEASE 花时间。这份文件说的是《第二周》分支：原版 6 天之外多了第二周（第 7–9 天、§7 §8、5 个结局）。上游原版在 [ip-please/ip-please.github.io](https://github.com/ip-please/ip-please.github.io)，在线玩在 [ip-please.github.io](https://ip-please.github.io)。
 
-## 主线收哪些 PR
+## 这个分支收哪些 PR
 
 只收两类：
 
@@ -13,13 +13,13 @@
 
 改了中文台词，记得同步改 `en.js`，再跑一下 `node tools/check_en.js`。
 
-**不收新增游戏机制的 PR**，包括新规则、新工具、新增天数或剧情、新角色、新模式（比如无尽模式），也包括移植到其他平台。
+**不收新增游戏机制的 PR**，包括新规则、新工具、新增天数或剧情、新角色、新模式（比如无尽模式），也包括移植到其他平台。这条规则在本分支同样适用：第二周的入境档案、§7 §8、5 个结局和结局图鉴，就是它名下的产物——它们没挤进上游那 6 天，而是做成了独立分支。
 
 ### 为什么
 
 想大改这个游戏的人太多了。每个点子都有意思，但方向各不相同：有人想加到 12 天，有人想做无尽模式，有人想加新角色。全合进来，游戏会变成大杂烩，PR 也审不过来；只合其中几个，对其他人又不公平。
 
-所以干脆划一条线：主线就是现在这 6 天，玩法上的新点子都做成 mod，各自发布、各自署名。这样你的想法能完整保留，不用为了合进主线删删改改。下面写了具体怎么做，做好以后会收进 README 的 mod 列表，B 站的 mod 列表也会同步收录。
+所以干脆划一条线：上游是那 6 天，这个分支是 9 天，都到此为止，玩法上的新点子各自做成 mod、各自发布、各自署名。这样你的想法能完整保留，不用为了合进别人那份删删改改。下面写了具体怎么做；做好以后去[上游登记](https://github.com/ip-please/ip-please.github.io/issues/new?template=mod.yml)收进 mod 列表，本分支不重复维护一份列表。
 
 拿不准自己的改动算哪一类，可以先开个 issue 问一句，免得白做。
 
@@ -37,11 +37,11 @@ Fork 之后，到 Settings → General 给仓库改个名，比如 `ip-please-en
 
 ### 3. 换存档键
 
-把 `screens.js` 里的 `SAVE_KEY` 改成你自己的，比如 `ip-please-endless-save-v1`。在线玩时，不同网站的存档本来就是分开的。但玩家把游戏下载到本地、双击 `index.html` 打开时，有的浏览器让所有本地网页共用一份存储，键名一样的话，原版和 mod 就会读到对方的存档。
+本分支把这件事收在一个文件里：改 `mod.js` 的 `MOD.id`，存档键、结局图鉴键和语言键都从它派生。原版的做法是改 `screens.js` 里的 `SAVE_KEY`，如果你从原版 fork，照上游那份指南走。在线玩时，不同网站的存档本来就是分开的。但玩家把游戏下载到本地、双击 `index.html` 打开时，有的浏览器让所有本地网页共用一份存储，键名一样的话，原版和 mod 就会读到对方的存档。
 
 ### 4. 改游戏
 
-各个文件管什么，见 README 里的[目录](README.md#目录)。剧本在 `data.js`。新用到的汉字要进字形图集，改了人物画法也要重画，这两种情况都要重新生成 `assets.js`，步骤见 README 的“修改与重建素材”。
+各个文件管什么，见 README 里的[目录](README.md#目录)。剧本在 `data.js`：每天的队伍写在 DAY_SCRIPT 表里，一行一天，从左到右排；固定角色写进当天的 cast，随机路人靠 FLAWS 里登记的矛盾种类生成。加天数不用手改日期和存档上限——第 1 天是 2026.10.19 星期一，之后顺推，最后一天的出口由剧本表算出来。新用到的汉字要进字形图集，改人物画法要重画（`tools/pp/cast.py` 定义部件，`tools/build_assets.py` 的 SCRIPTED 表登记 key），这两种情况都要重新生成 `assets.js`，步骤见 README 的“修改与重建素材”。
 
 ### 5. 发布
 
@@ -73,9 +73,9 @@ git pull upstream main
 
 ## English
 
-Thanks for spending time on IP, PLEASE.
+Thanks for spending time on IP, PLEASE. This file describes the **Week Two** fork: nine days, articles §7 and §8, five endings. The original six-day game is at [ip-please/ip-please.github.io](https://github.com/ip-please/ip-please.github.io).
 
-### What PRs the main game accepts
+### What this fork accepts
 
 Only two kinds:
 
@@ -84,13 +84,13 @@ Only two kinds:
 
 If you change a Chinese line, update `en.js` too and run `node tools/check_en.js`.
 
-**PRs that add game mechanics won't be merged.** That includes new rules, tools, days, story, characters or modes (an endless mode, say), and ports to other platforms.
+**PRs that add game mechanics won't be merged.** That includes new rules, tools, days, story, characters or modes (an endless mode, say), and ports to other platforms. The same line holds here: week two's entry records, §7 and §8, five endings and the ending file are all output of that rule — they never got squeezed into upstream's six days, they became their own fork.
 
 #### Why
 
 A lot of people want to overhaul this game. The ideas are fun, but they pull in different directions: one wants 12 days, another an endless mode, another new characters. Merging them all would turn the game into a patchwork, and there'd be no way to review every PR; merging only a few wouldn't be fair to the rest.
 
-So there's one line: the main game is these 6 days, and new gameplay ideas become mods, each published and credited on its own. That way your idea stays whole instead of being trimmed to fit. The steps are below. Once it's out, it goes on the mod list in the README and on the Bilibili mod list.
+So there's one line: upstream is those 6 days, this fork is 9, and both stop there. New gameplay ideas become mods, each published and credited on its own, so your idea stays whole instead of being trimmed to fit. The steps are below; once it's playable, [submit it upstream](https://github.com/ip-please/ip-please.github.io/issues/new?template=mod.yml) for the mod list — this fork doesn't keep a second copy of that list.
 
 Not sure which side your change falls on? Open an issue and ask first.
 
@@ -101,8 +101,8 @@ Not sure which side your change falls on? Open an issue and ask first.
    - Don't call it just “IP, PLEASE”. Add your own subtitle, e.g. “IP, PLEASE: Endless”.
    - Update `<title>`, `description` and the `og:*` tags in `index.html`. `og:url` and `og:image` point to the original, so shared links would preview as the original.
    - Say “based on IP, PLEASE” with a link to <https://ip-please.github.io> at the top of your README and in the credits. Add your own name to the credits too.
-3. **Change the save key.** Set `SAVE_KEY` in `screens.js` to your own (e.g. `ip-please-endless-save-v1`). Websites keep separate saves anyway, but when the game is played offline from `index.html`, some browsers share one storage across all local files, and the original and your mod would load each other's saves.
-4. **Edit the game.** The [Files](README.en.md#files) table in the README says what each file does. The script is in `data.js`. New Chinese characters and changed character art need `assets.js` regenerated; see “Editing and rebuilding assets”.
+3. **Change the save key.** This fork keeps them in one file: set `MOD.id` in `mod.js`, and the save, ending-file and language keys all derive from it (forks of upstream do this by editing `SAVE_KEY` in `screens.js`; follow the upstream guide if you started there). Websites keep separate saves anyway, but when the game is played offline from `index.html`, some browsers share one storage across all local files, and the original and your mod would load each other's saves.
+4. **Edit the game.** The [Files](README.en.md#files) table in the README says what each file does. The script is in `data.js`: one DAY_SCRIPT row per day, queue ordered left to right, fixed characters in that day's cast and random travelers drawn from the flaw types registered in FLAWS. Adding a day needs no date bookkeeping — day 1 is 2026.10.19, a Monday, and the rest follows from it. New Chinese characters and changed character art need `assets.js` regenerated; see “Editing and rebuilding assets”.
 5. **Publish.** In Settings → Pages → Build and deployment, set Source to “Deploy from a branch”, branch `main`, folder `/ (root)`. A minute or two later it's live at `https://<your-username>.github.io/<repo-name>/`. It's a plain static site, so any static host works. Put app builds in GitHub Releases.
 6. **License.** The code is MIT: change and share it freely, just keep the copyright notice in `LICENSE`. You can add your own line below it. The pixel font is SIL OFL 1.1: keep `OFL-fusion-pixel.txt`.
 7. **Pull in upstream updates (optional).**
